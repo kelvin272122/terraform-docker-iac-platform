@@ -1,0 +1,26 @@
+.page {
+  display: grid;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page__header h1 {
+  margin: 0 0 4px;
+  color: var(--color-primary);
+  font-size: clamp(1.6rem, 2.5vw, 2rem);
+}
+
+.page__header p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.page__eyebrow {
+  margin-bottom: 4px !important;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

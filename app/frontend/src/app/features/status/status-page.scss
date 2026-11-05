@@ -1,0 +1,75 @@
+.page {
+  display: grid;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page__header h1 {
+  margin: 0 0 4px;
+  color: var(--color-primary);
+  font-size: clamp(1.6rem, 2.5vw, 2rem);
+}
+
+.page__header p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.status-card {
+  min-width: 0;
+}
+
+.status-card__value {
+  margin: 0 0 8px;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.status-card__description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.status-meta__list {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+.status-meta__list div {
+  display: grid;
+  gap: 2px;
+}
+
+.status-meta__list dt {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status-meta__list dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.status-meta__help {
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 599px) {
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+}

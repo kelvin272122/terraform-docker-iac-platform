@@ -1,1 +1,69 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+html {
+  color-scheme: light;
+
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: mat.$azure-palette,
+      ),
+      typography: (
+        plain-family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        brand-family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      ),
+      density: 0,
+    )
+  );
+
+  --mat-sys-primary: #1e3a5f;
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-primary-container: #dce6f2;
+  --mat-sys-on-primary-container: #0b1f33;
+  --mat-sys-surface: #ffffff;
+  --mat-sys-surface-container-low: #ffffff;
+  --mat-sys-surface-container: #ffffff;
+  --mat-sys-surface-container-high: #f6f7f9;
+  --mat-sys-on-surface: #1f2933;
+  --mat-sys-on-surface-variant: #52606d;
+  --mat-sys-outline: #d9dee5;
+  --mat-sys-outline-variant: #d9dee5;
+}
+
+:root {
+  --color-bg: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-text: #1f2933;
+  --color-text-muted: #52606d;
+  --color-primary: #1e3a5f;
+  --color-border: #d9dee5;
+  --color-focus: #2f5d8a;
+  --color-success: #1b5e20;
+  --color-warning: #8a5300;
+  --color-danger: #b3261e;
+  --font-system: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-system);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}

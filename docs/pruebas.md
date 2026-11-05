@@ -21,7 +21,7 @@ No existen resultados reales hasta registrar una ejecución.
 Frontend y backend:
 - npm ci
 - npm run build
-- npm run test:run
+- npm test -- --watch=false (frontend; ejecución única sin watch)
 
 Frontend:
 - npm run test:e2e
@@ -64,6 +64,20 @@ Los comandos deben implementarse y comprobarse antes de declararlos operativos.
 | PF-22 | Recargar /registros | NGINX entrega SPA correctamente |
 | PF-23 | Ruta API inexistente | 404 JSON, no HTML |
 | PF-24 | Simulación desactivada | Demo usa backend y BD reales |
+
+### Validación manual de la interfaz inicial (2026-11-05)
+
+- Ejecutada manualmente por el usuario en un navegador real; no fue
+  automatizada ni ejecutada por el agente.
+- Aprobadas: renderizado de Estado; redirección `/` → `/estado`; navegación
+  Estado/Registros; acceso directo y recarga de `/registros`; página 404 y
+  enlace de regreso; consola sin errores de la aplicación observados; red sin
+  solicitudes a `/api`; ausencia de recursos externos de la aplicación; vista
+  de 360 px; cambio entre 959 y 960 px; apertura y cierre del menú móvil;
+  navegación por teclado, foco visible y enlace «Saltar al contenido».
+- Incidencias: ninguna. Capturas: no se tomaron.
+- Alcance: interfaz y servidor de desarrollo. No verifica NGINX, Terraform, el
+  despliegue final ni la integración con la API.
 
 ## 5. Matriz de infraestructura
 

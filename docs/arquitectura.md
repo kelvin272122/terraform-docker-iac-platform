@@ -58,6 +58,16 @@ Organización:
 - features/status/: estado del despliegue.
 - features/records/: gestión de registros.
 
+Decisiones visuales de la primera interfaz:
+- Paleta clara aprobada: fondo #f6f7f9, superficie #ffffff, texto #1f2933,
+  texto secundario #52606d, principal #1e3a5f, borde #d9dee5 y foco #2f5d8a.
+- Tipografía del sistema, sin fuentes ni iconos externos.
+- Logo SVG local sencillo, sin representar una comprobación real de salud.
+- Navegación lateral «Estado» y «Registros»; en escritorio desde 960 px y en
+  móvil con panel temporal cerrado inicialmente.
+- Estados sin integración: textos neutrales de «Pendiente de integración» o
+  «Sin comprobaciones realizadas», sin métricas ni indicadores ficticios.
+
 Simulación:
 - Permitida explícitamente durante desarrollo aislado del frontend.
 - Debe identificarse visualmente como modo simulado.

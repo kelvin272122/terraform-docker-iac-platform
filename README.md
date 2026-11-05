@@ -3,7 +3,8 @@
 La meta del proyecto es una plataforma web local completa de tres capas
 (Angular, API Express y PostgreSQL), con NGINX como servidor web y reverse
 proxy, desplegada con Terraform y Docker. Esa plataforma completa sigue
-siendo el objetivo pendiente; por ahora solo existe la base del frontend.
+siendo el objetivo pendiente; por ahora existe la base del frontend y su
+primera estructura visual.
 El alcance, la arquitectura y el despliegue detallados están en `docs/`.
 
 ## Estado actual
@@ -11,8 +12,16 @@ El alcance, la arquitectura y el despliegue detallados están en `docs/`.
 - Frontend Angular 21 inicializado en `app/frontend/` y compilable.
 - Base creada con componentes standalone, routing, SCSS, TypeScript estricto,
   modo zoneless y sin SSR.
-- Dashboard, Angular Material, formularios, listados e integración API:
-  pendientes.
+- Primera estructura visual con Material/CDK 21.2.14: navegación «Estado» y
+  «Registros», rutas `/estado` y `/registros`, redirección desde `/`, página
+  404, logo local y diseño adaptable.
+- Estado y Registros muestran solo estructuras y mensajes neutrales; no hay
+  llamadas a `/api` ni métricas ficticias.
+- Estructura visual y navegación: implementadas y validadas manualmente por el
+  usuario el 2026-11-05. La validación no fue automatizada ni ejecutada por el
+  agente y no cubre NGINX, Terraform ni el despliegue final.
+- Integración API, comprobaciones reales de servicios, dashboard funcional,
+  formularios y listados: pendientes.
 - Backend, base de datos, Dockerfiles, NGINX y Terraform: pendientes.
 - La respuesta temporal de `/api` para la etapa sin backend queda pendiente
   de definir para NGINX (contradicción registrada en `BITACORA.md`).
@@ -41,9 +50,9 @@ Versiones usadas y verificadas:
 
 - Node.js 24.13.1 mediante la imagen `node:24.13.1-bookworm-slim`
   (digest `sha256:a81a03dd965b4052269a57fac857004022b522a4bf06e7a739e25e18bce45af2`).
-- Angular CLI 21.2.29.
-- Angular 21.2.26 resuelto por `app/frontend/package-lock.json`.
-- TypeScript 5.9.3.
+- Angular CLI 21.2.29 y `@angular/build` 21.2.29.
+- Angular 21.2.26, Angular Material 21.2.14, Angular CDK 21.2.14 y
+  TypeScript 5.9.3 resueltos por `app/frontend/package-lock.json`.
 
 Ejecutar desde la raíz del repositorio.
 
@@ -83,7 +92,7 @@ docker run --rm --user "$(id -u):$(id -g)" \
   sh -lc 'mkdir -p "$HOME" "$npm_config_cache" && npm test -- --watch=false'
 ```
 
-Resultado verificado: 1 archivo de pruebas y 2 pruebas aprobadas.
+Resultado verificado: 5 archivos de pruebas y 9 pruebas aprobadas.
 
 ### Servidor de desarrollo
 
@@ -104,10 +113,24 @@ Acceso local: `http://127.0.0.1:4200/`. Para detenerlo, usar `Ctrl+C`.
 Resultado verificado: el contenedor escuchó en `0.0.0.0:4200`, el host publicó
 solo `127.0.0.1:4200` y la respuesta HTTP fue 200.
 
-Validación visual: el usuario confirmó manualmente que la página inicial
-«Hello, iac-panel-frontend» se muestra en `http://localhost:4200/` y en
-`http://127.0.0.1:4200/`. No se confirmó que la consola del navegador esté
-libre de errores.
+Comprobación HTTP: `/`, `/estado`, `/registros` y una ruta desconocida
+respondieron 200 con el HTML de la aplicación; `/logo.svg` respondió 200.
+El título y `lang="es"` están presentes. Esto no sustituye una validación de
+renderizado en navegador.
+
+Validación manual del usuario (2026-11-05): se aprobaron el renderizado de
+Estado, la redirección `/` → `/estado`, la navegación Estado/Registros, el
+acceso directo y la recarga de `/registros`, la página 404, la consola sin
+errores de la aplicación observados, la red sin solicitudes a `/api`, la
+ausencia de recursos externos de la aplicación, la vista de 360 px, el cambio
+entre 959 y 960 px, el menú móvil, la navegación por teclado, el foco visible
+y el enlace «Saltar al contenido». No se observaron incidencias y no se
+tomaron capturas. Esta comprobación no fue ejecutada ni automatizada por el
+agente y no verifica NGINX, Terraform ni el despliegue final.
+
+Siguen pendientes la integración API, las comprobaciones reales de servicios,
+los formularios, los listados y la resolución de la deuda de seguridad
+registrada en `BITACORA.md`.
 
 ## Estructura
 

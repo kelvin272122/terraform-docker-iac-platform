@@ -14,7 +14,8 @@
 |---|---|---|---|---|
 | IMP-001 | Inicialización y compilación base Angular 21 | Frontend | COMPLETADA | 2026-11-04 |
 | IMP-002 | Verificación de pruebas y arranque del frontend | Frontend | COMPLETADA | 2026-11-04 |
-| IMP-003 | Deuda de seguridad npm: glob y minimatch | Frontend | REQUIERE_REVISION | 2026-11-04 |
+| IMP-003 | Deuda de seguridad npm: glob y minimatch | Frontend | REQUIERE_REVISION | 2026-11-05 |
+| IMP-004 | Primera estructura visual del panel | Frontend | COMPLETADA | 2026-11-05 |
 
 ## Registro
 
@@ -157,7 +158,7 @@
 ### IMP-003 — Deuda de seguridad npm: glob y minimatch
 
 - Inicio: 2026-11-04
-- Última actualización: 2026-11-04
+- Última actualización: 2026-11-05
 - Área: Frontend
 - Estado: REQUIERE_REVISION
 - Requerimientos relacionados: arquitectura §4; política de versiones de despliegue §3.
@@ -226,6 +227,16 @@
   ejecutar auditoría, compilación y pruebas antes de proponer una
   actualización.
 
+#### Actualización — Revisión tras instalar Material/CDK (2026-11-05)
+- Se instalaron `@angular/material@21.2.14` y `@angular/cdk@21.2.14`.
+- `npm audit --json` mantuvo 16 alertas moderadas, 0 altas y 0 críticas, con
+  la misma cadena de `glob@13.0.6` y `minimatch@10.2.6`.
+- `npm audit --omit=dev --json` mantuvo 0 vulnerabilidades en el alcance
+  auditado sin dependencias de desarrollo.
+- No se identificaron alertas nuevas atribuibles a Material o CDK.
+- La deuda sigue pendiente; no se ejecutó `npm audit fix` ni se añadieron
+  overrides.
+
 #### Documentación
 - Documentos actualizados: `README.md`, `BITACORA.md`, `MEMORIA.md`.
 - README raíz: nota breve con referencia a este registro.
@@ -240,6 +251,116 @@
 #### Próximo paso
 - Continuar el desarrollo local manteniendo la deuda registrada; revisar la
   cadena antes de Angular Material.
+
+### IMP-004 — Primera estructura visual del panel
+
+- Inicio: 2026-11-05
+- Última actualización: 2026-11-05
+- Área: Frontend
+- Estado: COMPLETADA
+- Requerimientos relacionados: RF-01 (base), RF-07; requerimientos §7; arquitectura §4; pruebas PF-01, PF-19, PF-20 y PF-21.
+
+#### Cambios realizados
+- Se instalaron exactamente `@angular/material@21.2.14` y
+  `@angular/cdk@21.2.14`; no se añadió `@angular/animations`.
+- Se sustituyó la bienvenida inicial por un shell con barra superior, marca
+  local, navegación lateral y `router-outlet`.
+- Se implementaron las rutas `/estado`, `/registros`, la redirección de `/` a
+  `/estado` y la página 404 para rutas desconocidas.
+- La navegación usa una consulta explícita `(min-width: 960px)`: sidenav
+  lateral abierto desde 960 px y panel temporal cerrado por debajo, con botón
+  de menú y cierre al navegar.
+- Estado muestra tarjetas de Entorno, Versión de la interfaz, API y
+  PostgreSQL con textos neutrales, sin llamadas a `/api`, sin métricas
+  ficticias y con el botón Actualizar deshabilitado.
+- Registros muestra únicamente el encabezado y el mensaje «Funcionalidad
+  pendiente de implementación»; no incluye formulario, listado ni simulación.
+- Se añadió un logo SVG local, paleta clara aprobada, tipografía del sistema,
+  `lang="es"`, título descriptivo y foco visible.
+- Se eliminaron con `rmdir` los directorios vacíos propiedad de `root`
+  `app/frontend/app/frontend/` y `app/frontend/app/`.
+
+#### Archivos relevantes
+- `app/frontend/package.json`
+- `app/frontend/package-lock.json`
+- `app/frontend/src/app/app.ts`, `app.html`, `app.scss`
+- `app/frontend/src/app/app.routes.ts`
+- `app/frontend/src/app/app.spec.ts`
+- `app/frontend/src/app/app.routes.spec.ts`
+- `app/frontend/src/app/features/status/`
+- `app/frontend/src/app/features/records/`
+- `app/frontend/src/app/shared/not-found/`
+- `app/frontend/src/index.html`
+- `app/frontend/src/styles.scss`
+- `app/frontend/public/logo.svg`
+
+#### Validaciones
+- Versiones resueltas: Material y CDK `21.2.14`, Angular `21.2.26`, CLI y
+  `@angular/build` `21.2.29`, TypeScript `5.9.3`.
+- `package-lock.json`: solo se añadieron Material y CDK; `parse5@8.1.0` y
+  `entities@9.0.0` cambiaron de marca dev a producción sin cambiar de versión.
+- `npm ci`: 475 paquetes instalados; reportó 16 vulnerabilidades moderadas.
+- `npm run build`: correcto; bundle inicial de 385.95 kB y chunks diferidos
+  para estado, registros y 404.
+- `npm test -- --watch=false`: 5 archivos y 9 pruebas aprobadas.
+- `npm audit --json`: exit code 1 por 16 vulnerabilidades moderadas, 0 altas y
+  0 críticas; misma cadena `glob@13.0.6`/`minimatch@10.2.6`.
+- `npm audit --omit=dev --json`: exit code 0; 0 vulnerabilidades en el alcance
+  auditado sin dependencias de desarrollo. No inspecciona el bundle generado.
+- Los códigos de salida corresponden a vulnerabilidades detectadas y a un
+  alcance limpio; no hubo errores de ejecución ni de conexión al registro.
+- No aparecieron alertas nuevas atribuibles a Material o CDK.
+- Contraste comprobado: texto/fondo 13.76:1, texto/superficie 14.76:1,
+  secundario/fondo 6.02:1, principal/superficie 11.50:1,
+  blanco/principal 11.50:1 y foco/fondo 6.42:1.
+- Arranque en contenedor: HTTP 200 en `/`, `/estado`, `/registros` y
+  `/ruta-inexistente`; `/logo.svg` respondió 200; `lang="es"`, título
+  correcto y `<app-root>` presentes. Publicación solo en `127.0.0.1:4200`.
+- `src` y `public` no contienen `HttpClient`, llamadas a `/api`, fuentes
+  externas ni iconos externos.
+- Verificaciones no ejecutadas o pendientes:
+  - Renderizado real en navegador de esta nueva interfaz: pendiente.
+  - Consola del navegador libre de errores: no comprobada.
+  - Comportamiento visual a 360 px y navegación por teclado en navegador real:
+    pendiente. Las pruebas cubren el cambio de modo y el cierre del menú al
+    navegar, no el layout real.
+
+#### Actualización — Validación manual del usuario (2026-11-05)
+- El usuario validó manualmente la nueva interfaz en un navegador real. Esta
+  comprobación no fue ejecutada ni automatizada por el agente.
+- Comprobaciones aprobadas: renderizado de Estado; redirección `/` →
+  `/estado`; navegación Estado/Registros; acceso directo y recarga de
+  `/registros`; página 404 y enlace de regreso; consola sin errores de la
+  aplicación observados; red sin solicitudes a `/api` observadas; recursos sin
+  dependencias externas de la aplicación observadas; vista móvil de 360 px;
+  cambio entre 959 y 960 px; apertura y cierre del menú móvil; navegación por
+  teclado y foco visible; enlace «Saltar al contenido».
+- Incidencias observadas: ninguna. Capturas: no se tomaron.
+- Alcance: esta validación cubre la interfaz y el servidor de desarrollo. No
+  verifica NGINX, Terraform, el despliegue final ni la integración con la API.
+
+#### Documentación
+- Documentos actualizados: `README.md`, `MEMORIA.md`, `BITACORA.md`,
+  `app/frontend/README.md`, `docs/pruebas.md` y `docs/arquitectura.md`.
+- `docs/pruebas.md`: se ajustó `npm run test:run` al comando verificado
+  `npm test -- --watch=false`; no se creó un script nuevo. También se registró
+  la validación manual de la interfaz inicial.
+- Cierre de validación: se actualizaron `README.md`, `MEMORIA.md`,
+  `BITACORA.md` y `app/frontend/README.md` para reflejar la comprobación
+  manual del usuario.
+
+#### Pendientes o revisión
+- Los pendientes de validación visual y de navegador quedaron resueltos por la
+  comprobación manual del usuario.
+- Integración API, comprobaciones reales de servicios, formularios y listados:
+  pendientes.
+- Alertas de seguridad de `glob`/`minimatch`: pendientes de resolución,
+  registradas en IMP-003.
+- NGINX, Terraform y despliegue final: pendientes.
+
+#### Próximo paso
+- Planificar formularios y listados sin iniciar su implementación en esta
+  tarea.
 
 <!--
 Plantilla para cada implementación:

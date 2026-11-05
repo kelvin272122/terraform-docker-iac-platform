@@ -5,12 +5,21 @@ Base del frontend del Panel de verificación IaC, generada con Angular CLI
 
 ## Estado implementado
 
-- Aplicación Angular 21 inicial compilable.
+- Aplicación Angular 21 con primera estructura visual compilable.
 - Componentes standalone, routing, SCSS, TypeScript estricto, modo zoneless
   y sin SSR.
+- Angular Material y CDK 21.2.14 instalados; shell con navegación lateral,
+  rutas `/estado` y `/registros`, redirección desde `/`, página 404 y logo SVG
+  local adaptable.
+- Estado y Registros muestran solo estructuras y mensajes neutrales; no hay
+  llamadas a `/api`, datos simulados ni métricas ficticias.
+- Dashboard funcional, formularios, listados e integración con la API todavía
+  no están implementados.
+- Validación manual del usuario completada el 2026-11-05: renderizado, rutas,
+  navegación, 404, consola sin errores de la aplicación observados, red sin
+  solicitudes a `/api`, vista de 360 px, menú móvil, teclado y foco visible.
+  No fue automatizada ni ejecutada por el agente.
 - `package-lock.json` conservado para una instalación reproducible.
-- Dashboard, Angular Material, formularios, listados e integración con la API
-  todavía no están implementados.
 
 ## Prerrequisitos y ejecución
 
@@ -30,7 +39,9 @@ Desde `app/frontend/`, como referencia técnica dentro de ese contenedor:
 ## Estructura
 
 - `src/`: código de la aplicación.
-- `public/`: recursos públicos.
+- `src/app/features/`: páginas de estado y registros.
+- `src/app/shared/`: componentes compartidos, incluida la página 404.
+- `public/`: recursos públicos, incluido `logo.svg`.
 - `angular.json`: configuración del workspace.
 - `package.json`: scripts y dependencias.
 
