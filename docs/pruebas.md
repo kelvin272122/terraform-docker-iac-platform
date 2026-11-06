@@ -36,6 +36,21 @@ Infraestructura:
 
 Los comandos deben implementarse y comprobarse antes de declararlos operativos.
 
+### Validación del perfil endurecido de desarrollo (2026-11-05)
+
+- Ejecutada con contenedores temporales, usuario no root, `--cap-drop=ALL`,
+  `no-new-privileges`, límites de CPU/memoria/PIDs, `--read-only` y `/tmp`
+  en tmpfs.
+- Resultados: `npm ci` exit 0; `npm run build` exit 0; `npm test --
+  --watch=false` con 5 archivos y 9 pruebas; servidor con HTTP 200 en `/`,
+  `/estado`, `/registros`, ruta desconocida y `/logo.svg`.
+- Controles comprobados: `CapEff=0`, `NoNewPrivs=1`, raíz de solo lectura,
+  `memory.max` y `pids.max` efectivos, publicación solo en `127.0.0.1:4200`.
+- En esta validación `/tmp` quedó con `noexec`; no se asume como
+  comportamiento universal de Docker.
+- No se repitió validación visual; la validación visual de IMP-004 es
+  independiente. Estas medidas no corrigen las alertas de IMP-003.
+
 ## 4. Matriz funcional
 
 | ID | Prueba | Resultado esperado |

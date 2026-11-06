@@ -16,6 +16,7 @@
 | IMP-002 | Verificación de pruebas y arranque del frontend | Frontend | COMPLETADA | 2026-11-04 |
 | IMP-003 | Deuda de seguridad npm: glob y minimatch | Frontend | REQUIERE_REVISION | 2026-11-05 |
 | IMP-004 | Primera estructura visual del panel | Frontend | COMPLETADA | 2026-11-05 |
+| IMP-005 | Endurecimiento del entorno de desarrollo | Frontend | COMPLETADA | 2026-11-05 |
 
 ## Registro
 
@@ -237,6 +238,14 @@
 - La deuda sigue pendiente; no se ejecutó `npm audit fix` ni se añadieron
   overrides.
 
+#### Actualización — Mitigación de entorno (2026-11-05)
+- Se validó el perfil endurecido registrado en IMP-005 para los comandos de
+  desarrollo.
+- La mitigación reduce el impacto de ejecuciones comprometidas, pero no
+  corrige las CVE de `glob`/`minimatch` ni elimina la deuda.
+- IMP-003 permanece abierta y debe revisarse antes de una entrega o
+  despliegue.
+
 #### Documentación
 - Documentos actualizados: `README.md`, `BITACORA.md`, `MEMORIA.md`.
 - README raíz: nota breve con referencia a este registro.
@@ -361,6 +370,105 @@
 #### Próximo paso
 - Planificar formularios y listados sin iniciar su implementación en esta
   tarea.
+
+### IMP-005 — Endurecimiento del entorno de desarrollo
+
+- Inicio: 2026-11-05
+- Última actualización: 2026-11-05
+- Área: Frontend / entorno de desarrollo
+- Estado: COMPLETADA
+- Requerimientos relacionados: IMP-003; política de versiones de despliegue §3.
+
+#### Contexto y alcance
+- Tarea separada de IMP-004; no reabre la interfaz ni su validación.
+- No se modificaron código, dependencias, configuración Angular, SELinux,
+  permisos del host ni configuración del daemon.
+- No se ejecutó `npm audit fix`, no se usaron overrides y no se degradó Angular
+  CLI.
+- IMP-003 sigue abierta: las CVE de `glob`/`minimatch` no se han corregido.
+
+#### Entorno observado
+- Fedora 44, 16 vCPU, ~15 GiB de RAM y 8 GiB de swap.
+- Docker 29.9.0 en modo **rootful**.
+- Cgroups v2 con driver `systemd`; controladores `cpu`, `memory` y `pids`.
+- Docker reportó soporte para `MemoryLimit`, `SwapLimit`, `PidsLimit` y
+  `CpuCfsQuota`.
+- SELinux en `Enforcing`; no se modificó.
+- Rootless no activo; socket en `/var/run/docker.sock` con propietario
+  `root:docker`.
+
+#### Perfil validado
+- Usuario no root `$(id -u):$(id -g)`.
+- `--cap-drop=ALL`.
+- `--security-opt=no-new-privileges:true`.
+- `--pids-limit=512`.
+- Instalación, pruebas y servidor: `--cpus=2 --memory=2g --memory-swap=2g`.
+- Compilación: `--cpus=4 --memory=4g --memory-swap=4g`.
+- `--read-only`.
+- `--tmpfs /tmp:rw,nosuid,nodev,size=1g,mode=1777`.
+- Montaje limitado a `app/frontend:/app:rw`.
+- Servidor con `--init` y publicación exclusiva en `127.0.0.1:4200`.
+
+#### Controles solicitados y comprobados
+- Configuración solicitada: límites anteriores, capacidades eliminadas,
+  `no-new-privileges`, raíz de solo lectura, `/tmp` en tmpfs y montaje único.
+- Comprobado con contenedor de control:
+  `NanoCpus=2000000000`, `Memory=2147483648`, `MemorySwap=2147483648`,
+  `PidsLimit=512`, `CapDrop=["ALL"]`,
+  `SecurityOpt=["no-new-privileges:true"]`, `ReadonlyRootfs=true`.
+- Comprobado dentro del contenedor: `uid=1000`, `gid=1000`,
+  `memory.max=2147483648`, `pids.max=512`, `cpu.max=200000 100000`,
+  `CapEff=0000000000000000`, `NoNewPrivs=1`, raíz `overlay ... ro` y
+  `/tmp` como tmpfs de 1 GiB.
+- Publicación comprobada: `4200/tcp -> 127.0.0.1:4200`.
+
+#### Resultados de las operaciones
+- `npm ci`: exit 0, 9 s, 475 paquetes; 16 alertas moderadas; `OOMKilled=false`.
+- `npm run build`: exit 0, 3 s; bundle inicial de 385.95 kB;
+  `OOMKilled=false`.
+- `npm test -- --watch=false`: exit 0, 17 s; 5 archivos y 9 pruebas aprobadas;
+  `OOMKilled=false`.
+- `npm start`: listo en 6 s; HTTP 200 en `/`, `/estado`, `/registros`,
+  `/ruta-inexistente` y `/logo.svg`; publicación solo en `127.0.0.1:4200`.
+- No se observaron códigos 125, 126 o 127 ni fallos de red.
+- Hashes sin cambios:
+  - `app/frontend/package.json`:
+    `336728cef1df56cb11e0dce250e28ead659164ba6cbdaa6e214e74925ba0a3f4`.
+  - `app/frontend/package-lock.json`:
+    `8aeb12e65a93a64797a890aa0f5f4f6c9125989d7948e55b4be01d209c084595`.
+- No aparecieron archivos root-owned ni quedaron contenedores temporales;
+  el puerto 4200 quedó libre.
+
+#### Observaciones y limitaciones
+- `/tmp` quedó montado con `noexec` en esta validación. No se presenta como
+  comportamiento universal de Docker.
+- Los 2 GiB fueron suficientes para este proyecto en las operaciones
+  probadas; no garantizan suficiente memoria para crecimientos futuros.
+- Los límites son por contenedor y se ejecutaron de forma secuencial.
+- El montaje `app/frontend` sigue siendo `rw`; `--read-only` no protege ese
+  montaje.
+- Docker rootful, sin rootless ni userns, mantiene riesgo residual.
+- Instalación y servidor conservan red; los scripts de dependencias podrían
+  ejecutar código.
+- Estas medidas son compensatorias y **no corrigen las CVE** de IMP-003.
+- No se repitió validación visual con el perfil endurecido; solo se comprobó
+  HTTP. La validación visual de IMP-004 corresponde a aquella ejecución y se
+  conserva separada.
+
+#### Documentación
+- Documentos actualizados: `README.md`, `MEMORIA.md`, `BITACORA.md`,
+  `app/frontend/README.md`, `docs/pruebas.md` y `docs/arquitectura.md`.
+- El resumen reproducible queda en este registro; no se depende únicamente de
+  la ruta temporal de evidencias.
+
+#### Pendientes o revisión
+- IMP-003 sigue abierta; revisar la cadena antes de una entrega o despliegue.
+- Revaluar límites si el proyecto crece o si aparecen fallos de recursos.
+- Rootless/userns requeriría cambios de daemon fuera de esta autorización.
+- Backend, NGINX, Terraform, Dockerfiles y Compose no se han iniciado.
+
+#### Próximo paso
+- Usar el perfil documentado y mantener la deuda de seguridad en seguimiento.
 
 <!--
 Plantilla para cada implementación:

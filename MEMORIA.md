@@ -1,8 +1,8 @@
 # Memoria del proyecto
 
 ## Estado actual
-- Fase: primera estructura visual implementada y validada manualmente por el
-  usuario; integración de datos pendiente.
+- Fase: primera estructura visual validada y entorno de desarrollo endurecido;
+  integración de datos pendiente.
 - `app/frontend/` contiene un workspace Angular 21 con standalone, routing,
   SCSS, TypeScript estricto, modo zoneless y sin SSR.
 - Angular Material y CDK `21.2.14` instalados; shell con navegación lateral,
@@ -13,6 +13,9 @@
 - Pruebas unitarias: 5 archivos y 9 pruebas aprobadas.
 - Servidor de desarrollo verificado por HTTP; publicación solo en
   `127.0.0.1:4200`.
+- Perfil de desarrollo endurecido validado en IMP-005: usuario no root,
+  `--cap-drop=ALL`, `no-new-privileges`, límites por contenedor, `--read-only`
+  y `/tmp` en tmpfs. No corrige las CVE de IMP-003.
 - Validación manual del usuario (2026-11-05): Estado, redirección, navegación,
   acceso y recarga de `/registros`, 404, consola sin errores de la aplicación
   observados, red sin solicitudes a `/api`, sin recursos externos, vista de
@@ -35,6 +38,10 @@
   únicamente con autorización.
 - Paleta clara aprobada para esta tarea, tipografía del sistema, logo SVG
   local, navegación «Estado»/«Registros» y breakpoint explícito de 960 px.
+- Perfil endurecido para los comandos de desarrollo, validado en IMP-005:
+  2 CPU/2 GiB para instalación, pruebas y servidor; 4 CPU/4 GiB para
+  compilación; 512 PIDs; swap igual a memoria; `--read-only` con `/tmp`
+  temporal.
 
 ## Versiones fijadas
 - Node.js 24.13.1 en contenedor:
@@ -48,6 +55,7 @@
 - IMP-002: verificación de pruebas y arranque del frontend. COMPLETADA.
 - IMP-003: deuda de seguridad npm (`glob` y `minimatch`). REQUIERE_REVISION.
 - IMP-004: primera estructura visual del panel. COMPLETADA.
+- IMP-005: endurecimiento del entorno de desarrollo. COMPLETADA.
 
 ## Pendientes y advertencias
 - Integración API, comprobaciones reales de servicios, formularios y listados:
@@ -62,6 +70,11 @@
 - Docker es mitigación parcial: las herramientas siguen ejecutándose y el
   montaje de `app/frontend` permite modificar archivos del host. Mantener
   montajes mínimos, sin credenciales ni socket de Docker.
+- Los límites del perfil endurecido son por contenedor. `app/frontend` sigue
+  en `rw`; Docker sigue en modo rootful. En la validación de IMP-005 `/tmp`
+  quedó con `noexec`; no es un comportamiento universal de Docker.
+- La validación del perfil endurecido fue por comandos y HTTP, no visual. La
+  validación visual de IMP-004 se conserva separada.
 - Responsable de seguimiento: mantenedor del proyecto. Revisar la cadena
   antes de una entrega o despliegue; verificar versiones transitivas y repetir
   auditoría, compilación y pruebas.
@@ -71,10 +84,11 @@
   sin la autorización correspondiente.
 
 ## Siguiente paso
-1. Planificar formularios y listados sin iniciar su implementación.
-2. Integrar la API y ejecutar comprobaciones reales de servicios.
-3. Definir la respuesta temporal de `/api` para NGINX.
+1. Usar el perfil endurecido documentado para los comandos de desarrollo.
+2. Planificar formularios y listados sin iniciar su implementación.
+3. Integrar la API y ejecutar comprobaciones reales de servicios.
+4. Definir la respuesta temporal de `/api` para NGINX.
 
 ## Última actualización
 - Fecha: 2026-11-05.
-- Implementación relacionada: IMP-004.
+- Implementación relacionada: IMP-005.

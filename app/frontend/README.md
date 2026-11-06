@@ -28,6 +28,11 @@ dentro del contenedor documentado en el [README raíz](../../README.md), que
 incluye los prerrequisitos, la imagen fijada y los comandos Docker verificados
 de instalación, pruebas, compilación y servidor de desarrollo.
 
+Esos comandos usan el perfil endurecido validado en IMP-005: usuario no root,
+límites por contenedor, `--cap-drop=ALL`, `no-new-privileges`, raíz de solo
+lectura y `/tmp` en tmpfs. No es una corrección de las alertas de seguridad de
+IMP-003. La validación del perfil fue por comandos y HTTP, no visual.
+
 Desde `app/frontend/`, como referencia técnica dentro de ese contenedor:
 
 - `npm start` inicia el servidor de desarrollo.

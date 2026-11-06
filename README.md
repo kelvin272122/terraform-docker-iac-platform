@@ -36,6 +36,7 @@ están en `BITACORA.md` (IMP-003).
 ## Prerrequisitos
 
 - Docker Engine o Docker Desktop operativo y acceso autorizado al daemon.
+- Soporte de cgroups v2 para aplicar límites de CPU, memoria y PIDs.
 - Bash y utilidades de un entorno Linux o equivalente.
 - Acceso a internet para descargar la imagen y las dependencias
   cuando no estén disponibles localmente.
@@ -56,12 +57,29 @@ Versiones usadas y verificadas:
 
 Ejecutar desde la raíz del repositorio.
 
+Los comandos siguientes usan el perfil endurecido validado en IMP-005:
+usuario no root, `--cap-drop=ALL`, `no-new-privileges`, límites por
+contenedor, raíz de solo lectura y `/tmp` en tmpfs. El montaje
+`app/frontend` permanece `rw` porque npm y Angular necesitan escribir.
+Límites: instalación, pruebas y servidor usan 2 CPU y 2 GiB; compilación usa
+4 CPU y 4 GiB; 512 PIDs; swap igual a memoria. En esta validación `/tmp`
+quedó con `noexec` por Docker; no se asume como comportamiento universal.
+Estas medidas son compensatorias: no corrigen las alertas de IMP-003. Docker
+sigue en modo rootful y `app/frontend` continúa montado `rw`.
+
 Instalación reproducible:
 
 ```bash
-docker run --rm --user "$(id -u):$(id -g)" \
+docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  --cap-drop=ALL \
+  --security-opt=no-new-privileges:true \
+  --pids-limit=512 \
+  --cpus=2 --memory=2g --memory-swap=2g \
+  --read-only \
+  --tmpfs /tmp:rw,nosuid,nodev,size=1g,mode=1777 \
   -e HOME=/tmp/ng-home -e npm_config_cache=/tmp/npm-cache \
-  -v "$PWD/app/frontend:/app" -w /app \
+  -v "$PWD/app/frontend:/app:rw" -w /app \
   node:24.13.1-bookworm-slim@sha256:a81a03dd965b4052269a57fac857004022b522a4bf06e7a739e25e18bce45af2 \
   sh -lc 'mkdir -p "$HOME" "$npm_config_cache" && npm ci'
 ```
@@ -69,11 +87,18 @@ docker run --rm --user "$(id -u):$(id -g)" \
 Compilación:
 
 ```bash
-docker run --rm --user "$(id -u):$(id -g)" \
+docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  --cap-drop=ALL \
+  --security-opt=no-new-privileges:true \
+  --pids-limit=512 \
+  --cpus=4 --memory=4g --memory-swap=4g \
+  --read-only \
+  --tmpfs /tmp:rw,nosuid,nodev,size=1g,mode=1777 \
   -e HOME=/tmp/ng-home -e npm_config_cache=/tmp/npm-cache \
-  -v "$PWD/app/frontend:/app" -w /app \
+  -v "$PWD/app/frontend:/app:rw" -w /app \
   node:24.13.1-bookworm-slim@sha256:a81a03dd965b4052269a57fac857004022b522a4bf06e7a739e25e18bce45af2 \
-  sh -lc 'npm run build'
+  sh -lc 'mkdir -p "$HOME" "$npm_config_cache" && npm run build'
 ```
 
 La salida de compilación queda en
@@ -81,13 +106,20 @@ La salida de compilación queda en
 
 ### Pruebas unitarias
 
-Ejecución única, sin modo watch (verificada):
+Ejecución única, sin modo watch (verificada con el perfil endurecido):
 
 ```bash
-docker run --rm --user "$(id -u):$(id -g)" \
+docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  --cap-drop=ALL \
+  --security-opt=no-new-privileges:true \
+  --pids-limit=512 \
+  --cpus=2 --memory=2g --memory-swap=2g \
+  --read-only \
+  --tmpfs /tmp:rw,nosuid,nodev,size=1g,mode=1777 \
   -e HOME=/tmp/ng-home -e npm_config_cache=/tmp/npm-cache \
   -e CI=true \
-  -v "$PWD/app/frontend:/app" -w /app \
+  -v "$PWD/app/frontend:/app:rw" -w /app \
   node:24.13.1-bookworm-slim@sha256:a81a03dd965b4052269a57fac857004022b522a4bf06e7a739e25e18bce45af2 \
   sh -lc 'mkdir -p "$HOME" "$npm_config_cache" && npm test -- --watch=false'
 ```
@@ -97,13 +129,20 @@ Resultado verificado: 5 archivos de pruebas y 9 pruebas aprobadas.
 ### Servidor de desarrollo
 
 Escucha en `0.0.0.0:4200` dentro del contenedor y se publica únicamente en
-`127.0.0.1:4200` (verificado):
+`127.0.0.1:4200` (verificado con el perfil endurecido):
 
 ```bash
-docker run --rm --init --user "$(id -u):$(id -g)" \
+docker run --rm --init \
+  --user "$(id -u):$(id -g)" \
+  --cap-drop=ALL \
+  --security-opt=no-new-privileges:true \
+  --pids-limit=512 \
+  --cpus=2 --memory=2g --memory-swap=2g \
+  --read-only \
+  --tmpfs /tmp:rw,nosuid,nodev,size=1g,mode=1777 \
   -e HOME=/tmp/ng-home -e npm_config_cache=/tmp/npm-cache \
   -p 127.0.0.1:4200:4200 \
-  -v "$PWD/app/frontend:/app" -w /app \
+  -v "$PWD/app/frontend:/app:rw" -w /app \
   node:24.13.1-bookworm-slim@sha256:a81a03dd965b4052269a57fac857004022b522a4bf06e7a739e25e18bce45af2 \
   sh -lc 'mkdir -p "$HOME" "$npm_config_cache" && npm start -- --host 0.0.0.0 --port 4200'
 ```
@@ -117,6 +156,11 @@ Comprobación HTTP: `/`, `/estado`, `/registros` y una ruta desconocida
 respondieron 200 con el HTML de la aplicación; `/logo.svg` respondió 200.
 El título y `lang="es"` están presentes. Esto no sustituye una validación de
 renderizado en navegador.
+
+La validación del perfil endurecido fue por ejecución de comandos y HTTP; no
+se repitió la validación visual en navegador con este perfil. La validación
+visual de IMP-004 corresponde a aquella ejecución y no se reutiliza como
+prueba de este perfil.
 
 Validación manual del usuario (2026-11-05): se aprobaron el renderizado de
 Estado, la redirección `/` → `/estado`, la navegación Estado/Registros, el

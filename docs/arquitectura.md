@@ -68,6 +68,17 @@ Decisiones visuales de la primera interfaz:
 - Estados sin integración: textos neutrales de «Pendiente de integración» o
   «Sin comprobaciones realizadas», sin métricas ni indicadores ficticios.
 
+Endurecimiento del entorno de desarrollo:
+- Comandos en contenedores con usuario no root, `--cap-drop=ALL`,
+  `--security-opt=no-new-privileges:true`, límites por contenedor,
+  `--read-only` y `/tmp` en tmpfs.
+- Límites iniciales: 2 CPU y 2 GiB para instalación, pruebas y servidor;
+  4 CPU y 4 GiB para compilación; 512 PIDs; swap igual a memoria.
+- `app/frontend` se monta en modo `rw`; Docker opera en modo rootful.
+- Estas medidas son compensatorias y no corrigen las alertas de IMP-003.
+- En la validación de IMP-005 `/tmp` quedó con `noexec`; no se asume como
+  comportamiento universal de Docker.
+
 Simulación:
 - Permitida explícitamente durante desarrollo aislado del frontend.
 - Debe identificarse visualmente como modo simulado.
