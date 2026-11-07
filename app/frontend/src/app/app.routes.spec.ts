@@ -1,6 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { importProvidersFrom } from '@angular/core';
+import { MatDialogModule } from '@angular/material/dialog';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { of } from 'rxjs';
+
+import { RecordsService } from './features/records/records.service';
+import { StatusService } from './features/status/status.service';
 
 import { routes } from './app.routes';
 import { RecordsPage } from './features/records/records-page';
@@ -10,7 +16,34 @@ import { NotFoundPage } from './shared/not-found/not-found-page';
 describe('routes', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideRouter(routes)],
+      providers: [
+        provideRouter(routes),
+        importProvidersFrom(MatDialogModule),
+        {
+          provide: StatusService,
+          useValue: {
+            load: () =>
+              of({
+                info: {
+                  ok: false,
+                  failure: { kind: 'network', message: 'Sin conexión.' },
+                },
+                health: {
+                  ok: false,
+                  failure: { kind: 'network', message: 'Sin conexión.' },
+                },
+              }),
+          },
+        },
+        {
+          provide: RecordsService,
+          useValue: {
+            list: () => of({ ok: true, value: { items: [], total: 0 } }),
+            create: () => of({ ok: false, failure: { kind: 'network', message: 'x' } }),
+            remove: () => of({ ok: true, value: undefined }),
+          },
+        },
+      ],
     });
   });
 

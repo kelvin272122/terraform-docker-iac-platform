@@ -17,6 +17,10 @@
 | IMP-003 | Deuda de seguridad npm: glob y minimatch | Frontend | REQUIERE_REVISION | 2026-11-05 |
 | IMP-004 | Primera estructura visual del panel | Frontend | COMPLETADA | 2026-11-05 |
 | IMP-005 | Endurecimiento del entorno de desarrollo | Frontend | COMPLETADA | 2026-11-05 |
+| IMP-006 | Base de API Express y contrato inicial | Backend | COMPLETADA | 2026-11-05 |
+| IMP-007 | PostgreSQL, migraciones, pool y `/api/health` | Backend / Base de datos | COMPLETADA | 2026-11-07 |
+| IMP-008 | Operaciones HTTP de Registros | Backend / API | COMPLETADA | 2026-11-07 |
+| IMP-009 | Integración del frontend con la API real | Frontend / Integración | IMPLEMENTADA_PENDIENTE_VALIDACION | 2026-11-07 |
 
 ## Registro
 
@@ -78,7 +82,8 @@
 - Memoria: actualizada.
 - Pendiente documental para NGINX: `docs/arquitectura.md` (§10) define `/api`
   como 404 JSON y `docs/despliegue.md` (§4) como 404 en texto plano. No se
-  modificó ninguna de las dos versiones.
+  modificó ninguna de las dos versiones en esa tarea; la contradicción se
+  corrigió en IMP-006.
 
 #### Pendientes o revisión
 - Construir el dashboard, incorporar Angular Material y las funcionalidades
@@ -469,6 +474,415 @@
 
 #### Próximo paso
 - Usar el perfil documentado y mantener la deuda de seguridad en seguimiento.
+
+### IMP-006 — Base de API Express y contrato inicial
+
+- Inicio: 2026-11-05
+- Última actualización: 2026-11-05
+- Área: Backend
+- Estado: COMPLETADA
+- Requerimientos relacionados: arquitectura §5 y §7; backend AGENTS; pruebas PF-02 y PF-23.
+
+#### Cambios realizados
+- Se creó la base del backend con Node.js 24, Express 5.3.0, TypeScript 5.9.3
+  estricto y módulos ES.
+- Se separó la creación de la app (`createApp`) del arranque (`server.ts`).
+- Se implementó `GET /api/info` con `environment`, `apiVersion: "v1"`,
+  `appVersion` desde `APP_VERSION` e `instanceId` desde el hostname.
+- Se añadieron respuestas JSON 404 para rutas desconocidas, límite JSON de
+  16 KiB y manejo seguro de JSON malformado, cuerpo demasiado grande y errores
+  internos.
+- Se implementó configuración validada al arrancar y cierre ordenado ante
+  SIGTERM con espera acotada.
+- No se implementaron PostgreSQL, `/api/health`, Registros, frontend, NGINX,
+  Dockerfiles, Compose ni Terraform.
+- No se ejecutó `npm audit fix`, no se usaron overrides y no se modificó el
+  frontend.
+
+#### Archivos relevantes
+- `app/backend/package.json`
+- `app/backend/package-lock.json`
+- `app/backend/tsconfig.json`
+- `app/backend/tsconfig.test.json`
+- `app/backend/vitest.config.ts`
+- `app/backend/.env.example`
+- `app/backend/.gitignore`
+- `app/backend/README.md`
+- `app/backend/src/app.ts`
+- `app/backend/src/server.ts`
+- `app/backend/src/config/env.ts`
+- `app/backend/src/api/errors.ts`
+- `app/backend/src/middleware/error-handler.ts`
+- `app/backend/src/routes/info.routes.ts`
+- `app/backend/tests/`
+
+#### Dependencias elegidas
+- `express@5.3.0`: framework HTTP aprobado; última versión estable de la
+  línea 5.
+- `typescript@5.9.3`: compilación estricta ESM.
+- `vitest@4.1.12`: runner definido en las pruebas del proyecto; compatible
+  con Node 24.
+- `supertest@7.3.1` y `@types/supertest@7.2.1`: pruebas HTTP.
+- `@types/express@5.0.6` y `@types/node@24.19.2`: tipos de Express 5 y Node 24.
+- No se añadieron `pg` ni herramientas de migración.
+
+#### Validaciones
+- `npm ci`: exit 0 y reproducible.
+- `npm run build`: exit 0; `OOMKilled=false`.
+- `npm run typecheck`: exit 0; `OOMKilled=false`.
+- `npm test`: 3 archivos y 15 pruebas aprobadas; exit 0;
+  `OOMKilled=false`.
+- Arranque con configuración inválida: exit 1 y log seguro
+  `api failed to start`, sin stack trace.
+- `npm audit` y `npm audit --omit=dev`: exit 0; 0 vulnerabilidades.
+- Perfil endurecido verificado para este backend en instalación, compilación,
+  pruebas y ejecución: usuario no root, `--cap-drop=ALL`,
+  `no-new-privileges`, límites por contenedor, `--read-only`, `/tmp` en tmpfs
+  y montaje mínimo. En esta ejecución `/tmp` quedó con `noexec`.
+- HTTP en red Docker dedicada, sin publicar el backend al host:
+  - `/api/info`: 200 JSON con `environment`, `apiVersion`, `appVersion` e
+    `instanceId`.
+  - Ruta desconocida: 404 `NOT_FOUND` JSON.
+  - JSON malformado: 400 `VALIDATION_ERROR`.
+  - Cuerpo mayor de 16 KiB: 413 `PAYLOAD_TOO_LARGE`.
+  - Sin puertos publicados (`PortBindings={}`).
+  - Cierre ante SIGTERM: exit 0 y logs de cierre completo.
+- No se observaron OOM, errores de ejecución ni detalles internos en las
+  respuestas de error.
+
+#### Documentación
+- Documentos actualizados: `README.md`, `app/backend/README.md`,
+  `BITACORA.md`, `MEMORIA.md`, `docs/arquitectura.md`,
+  `docs/despliegue.md` y `docs/pruebas.md`.
+- Se corrigió la contradicción de la respuesta temporal `/api` para que
+  `docs/despliegue.md` use JSON `API_NOT_CONFIGURED`, coherente con
+  arquitectura y pruebas. NGINX no se implementó.
+
+#### Pendientes o revisión
+- Tarea 2: PostgreSQL, migraciones y `/api/health`.
+- Tarea 3: Registros.
+- Tarea 4: pruebas de integración completas.
+- Tarea 5: integración del frontend.
+- IMP-003 sigue abierta; no se corrigieron las CVE de `glob`/`minimatch`.
+
+#### Próximo paso
+- Planificar e implementar la Tarea 2 con autorización separada.
+
+#### Actualización — Revisión de cierre de Tarea 1 (2026-11-07)
+
+- Revisión documental y de evidencias, sin reimplementar el backend ni repetir
+  pruebas ya acreditadas.
+- Evidencias conservadas de la Tarea 1: `npm run build` exit 0;
+  `npm run typecheck` exit 0; `npm test` con 3 archivos y 15 pruebas;
+  `npm ci` exit 0; `npm audit` y `npm audit --omit=dev` con 0 vulnerabilidades;
+  HTTP en red Docker dedicada (`/api/info` 200, ruta desconocida 404
+  `NOT_FOUND`, JSON malformado 400 `VALIDATION_ERROR`, cuerpo mayor de 16 KiB
+  413 `PAYLOAD_TOO_LARGE`); cierre ante SIGTERM con exit 0; configuración
+  inválida con exit 1 y log seguro; perfil endurecido validado de forma
+  independiente para el backend.
+- Verificaciones no repetidas en esta revisión: compilación, pruebas,
+  auditoría, HTTP y perfil endurecido. No se reejecutaron.
+- Corrección documental: `README.md` actualizado para reflejar que la respuesta
+  temporal de `/api` ya está definida como 404 JSON `API_NOT_CONFIGURED` en
+  `docs/arquitectura.md` y `docs/despliegue.md`; solo la implementación de
+  NGINX sigue pendiente. No se implementó NGINX.
+- Plan de Tarea 2 elaborado y pendiente de aprobación; no se instalaron
+  dependencias, no se crearon contenedores y no se modificó código ni
+  configuración.
+- `app/backend/` sigue sin registrar en Git; no se ejecutó `git add`, no se
+  crearon commits y no se modificó `.gitignore`.
+
+### IMP-007 — PostgreSQL, migraciones, pool y /api/health
+
+- Inicio: 2026-11-07
+- Última actualización: 2026-11-07
+- Área: Backend / Base de datos
+- Estado: COMPLETADA
+- Requerimientos relacionados: RF-02 y RF-03 (base de disponibilidad y
+  comprobación); arquitectura §5, §7 y §8; backend/database AGENTS; PF-03 y
+  PF-04 (no marcadas como aprobadas).
+
+#### Cambios realizados
+- Se añadió `pg@8.23.1` como dependencia de runtime.
+- Se añadieron `@types/pg@8.23.1` y `node-pg-migrate@9.0.0` como dependencias
+  de desarrollo/migración. El runtime no requiere `node-pg-migrate`.
+- La configuración exige `DB_*` al arrancar y valida `DB_PORT`; la conectividad
+  no es requisito para arrancar.
+- `MIGRATION_DATABASE_URL` se usa exclusivamente en la migración
+  administrativa; la API no la recibe.
+- Se implementó un pool PostgreSQL con límites de conexión y consulta, logs
+  seguros y cierre ordenado ante SIGTERM.
+- Se implementó `GET /api/health` con `SELECT 1` real y contrato 200/503.
+- Se creó la migración SQL de `records` con restricciones e índice.
+- Se creó un script administrativo idempotente de privilegios.
+- No se implementaron Registros, integración frontend, NGINX, Dockerfiles,
+  Compose ni Terraform.
+
+#### Archivos relevantes
+- `app/backend/package.json`
+- `app/backend/package-lock.json`
+- `app/backend/.env.example`
+- `app/backend/src/config/env.ts`
+- `app/backend/src/db/pool.ts`
+- `app/backend/src/services/health.service.ts`
+- `app/backend/src/routes/health.routes.ts`
+- `app/backend/src/app.ts`
+- `app/backend/src/server.ts`
+- `app/backend/tests/`
+- `app/database/migrations/1794009600000_create-records.sql`
+- `app/database/scripts/grant-app-privileges.sql`
+- `README.md`, `app/backend/README.md`, `docs/arquitectura.md`,
+  `docs/despliegue.md`, `docs/pruebas.md`, `MEMORIA.md`
+
+#### Validaciones
+- `npm ci`: exit 0.
+- `npm run build`: exit 0.
+- `npm run typecheck`: exit 0.
+- `npm test`: 5 archivos y 32 pruebas aprobadas; se conservaron las pruebas de
+  Tarea 1.
+- `npm audit`: exit 1 por 3 vulnerabilidades moderadas de desarrollo
+  (`node-pg-migrate`, `glob@13.0.7` y `minimatch@10.2.6`).
+- `npm audit --omit=dev`: exit 0, 0 vulnerabilidades en el alcance auditado.
+  No corrige las CVE ni sustituye la auditoría completa.
+- PostgreSQL real descartable:
+  - Imagen `postgres:17.11-bookworm` con digest
+    `sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994`.
+  - Usuario efectivo `postgres` (uid 999); sin forzar uid 1000, sin
+    `--read-only` ni `--cap-drop`.
+  - Límites: 1 CPU, 1 GiB, MemorySwap 1 GiB y 256 PIDs.
+  - Sin puertos publicados; red y volumen dedicados.
+- Migración sobre base vacía: aplicada.
+- Segunda ejecución: `No migrations to run!`; historial con una fila.
+- Esquema verificado: columnas, restricciones, índice y propietario
+  administrador.
+- Privilegios permitidos: `SELECT 1`, `INSERT`, `SELECT` y `DELETE`.
+- Privilegios denegados: `UPDATE`, `CREATE TABLE`, `ALTER TABLE`,
+  `DROP TABLE` y `TRUNCATE`.
+- Privilegios efectivos: `CONNECT` y `USAGE` en `public`; sin `CREATE` en
+  `public`; `SELECT`, `INSERT` y `DELETE` sobre `records`; sin `UPDATE`,
+  `TRUNCATE`, `REFERENCES` ni `TRIGGER`.
+- El rol de aplicación no es propietario, no es superusuario ni miembro del rol
+  administrador.
+- `/api/health` con BD disponible: 200, `database=up`, 53 ms observados.
+- `/api/health` con BD detenida: 503, `database=down`; 10 consultas entre 1004
+  y 1123 ms.
+- `/api/info` con BD detenida: 200.
+- Arranque con configuración válida y BD inaccesible: info 200 y health 503.
+- Quince fallos consecutivos devolvieron 503 sin agotar el pool.
+- Recuperación tras reiniciar PostgreSQL: 503 (1121 ms), 200 (393 ms) y 200
+  (7 ms) sobre el mismo proceso.
+- Cierre ante SIGTERM: exit 0 y log `shutdown complete`.
+- Respuestas y logs sin secretos, SQL interno ni stack traces.
+- Recursos temporales eliminados: contenedores, red, volumen y archivos
+  temporales.
+- PF-03, PF-04 y PI-* no se marcan aprobadas: no se ejecutó el despliegue
+  integrado con NGINX, Terraform ni la interfaz.
+
+#### Documentación
+- Documentos actualizados: `README.md`, `app/backend/README.md`,
+  `docs/arquitectura.md`, `docs/despliegue.md`, `docs/pruebas.md`,
+  `BITACORA.md` y `MEMORIA.md`.
+- Se actualizaron las decisiones de timeout, variables de migración,
+  separación runtime/migración y privilegios sin `UPDATE`.
+- IMP-003 permanece abierta. La deuda de las herramientas de migración del
+  backend se registra por separado de la deuda del frontend.
+
+#### Pendientes o revisión
+- Tarea 3: Registros.
+- Tarea 4: pruebas de integración completas.
+- Tarea 5: integración del frontend.
+- Creación del rol de aplicación y ejecución de migraciones desde Terraform.
+- NGINX, Dockerfiles y despliegue final.
+
+#### Próximo paso
+- Planificar e implementar la Tarea 3 (Registros) con autorización separada.
+
+### IMP-008 — Operaciones HTTP de Registros
+
+- Inicio: 2026-11-07
+- Última actualización: 2026-11-07
+- Área: Backend / API
+- Estado: COMPLETADA
+- Requerimientos relacionados: RF-04, RF-05, RF-06 y base de RF-07;
+  arquitectura §6 y §7; backend AGENTS; PF-06 a PF-18 (validadas solo a nivel
+  backend/PostgreSQL, no para el sistema completo).
+
+#### Cambios realizados
+- Se implementaron `GET /api/records`, `POST /api/records` y
+  `DELETE /api/records/:id`.
+- Se separó la funcionalidad en modelo, validación, repositorio, servicio y
+  rutas dentro de `src/records/`.
+- Se reutilizó el pool existente y SQL parametrizado; no se añadieron ORM ni
+  dependencias de runtime.
+- El listado usa una sola consulta con `count(*) OVER()` para mantener
+  coherencia entre `items` y `total`.
+- La creación valida título y descripción, recorta espacios, normaliza
+  descripción vacía a `null`, rechaza campos desconocidos y genera `id` con
+  `randomUUID()`. `createdAt` procede del registro insertado en PostgreSQL.
+- La eliminación valida UUID canónico y usa el resultado real del `DELETE`, sin
+  `SELECT` previo.
+- Las longitudes se cuentan en puntos de código Unicode, equivalentes a
+  `char_length` y `VARCHAR(n)` de PostgreSQL.
+- Se añadieron los códigos `RECORD_NOT_FOUND` y `DATABASE_UNAVAILABLE` y el
+  mapeo seguro de errores de BD.
+- No se modificaron frontend, NGINX, Terraform, Dockerfiles ni Compose.
+
+#### Archivos relevantes
+- `app/backend/src/records/records.model.ts`
+- `app/backend/src/records/records.validation.ts`
+- `app/backend/src/records/records.repository.ts`
+- `app/backend/src/records/records.service.ts`
+- `app/backend/src/records/records.routes.ts`
+- `app/backend/src/api/errors.ts`
+- `app/backend/src/middleware/error-handler.ts`
+- `app/backend/src/app.ts`
+- `app/backend/src/server.ts`
+- `app/backend/tests/records.validation.spec.ts`
+- `app/backend/tests/records.service.spec.ts`
+- `app/backend/tests/records.repository.spec.ts`
+- `app/backend/tests/records.routes.spec.ts`
+- `app/backend/tests/records.integration.spec.ts`
+- `app/backend/tests/test-config.ts`
+- `app/backend/tests/health.spec.ts`, `info.spec.ts`, `errors.spec.ts`
+- `README.md`, `app/backend/README.md`, `docs/arquitectura.md`,
+  `docs/pruebas.md`, `BITACORA.md`, `MEMORIA.md`
+
+#### Validaciones
+- `npm ci`: exit 0.
+- `npm run build`: exit 0.
+- `npm run typecheck`: exit 0.
+- `npm test` sin integración: 106 pruebas unitarias aprobadas y 14 de
+  integración omitidas.
+- `npm test` con `RUN_DB_INTEGRATION=1`: 10 archivos y 120 pruebas aprobadas.
+- Integración real verificada: listado vacío; creación y consulta; variantes de
+  descripción; recorte; límites 100/500; Unicode (100/101 emoji y mezcla
+  99 ASCII + 1 emoji); tipos incorrectos; campos desconocidos; `id`/`createdAt`
+  de cliente; cuerpos no objeto; caracteres NUL; títulos repetidos; orden con empate de
+  `created_at`; `total` coherente; eliminación 204 sin cuerpo; segunda
+  eliminación 404; UUID inválido 400; UUID inexistente 404; texto con
+  apariencia SQL tratado como dato; BD no disponible 503 sin detalles;
+  recuperación posterior.
+- HTTP real: listado vacío 200; creación 201; listado 200; eliminación 204;
+  repetición 404 `RECORD_NOT_FOUND`; UUID inválido 400; `id` de cliente 400;
+  título de 101 caracteres 400; 100 emoji aceptados.
+- BD detenida: `/api/records` 503 `DATABASE_UNAVAILABLE` en 1008–1084 ms;
+  recuperación con 503 seguido de 200 en 48 ms y 6 ms sobre el mismo proceso.
+  `/api/health` también pasó de 503 a 200.
+- Privilegios del rol de aplicación: `SELECT`, `INSERT` y `DELETE` permitidos;
+  `UPDATE`, `TRUNCATE` y `CREATE` en `public` denegados.
+- Cierre ante SIGTERM: exit 0.
+- `npm audit`: exit 1 por 3 vulnerabilidades moderadas de desarrollo
+  (`node-pg-migrate`, `glob`, `minimatch`).
+- `npm audit --omit=dev`: exit 0, 0 vulnerabilidades en el alcance auditado.
+  No corrige las CVE ni sustituye la auditoría completa.
+- Sin secretos en respuestas, logs ni archivos del repositorio.
+- Recursos temporales eliminados: contenedores, red, volumen y archivos
+  temporales.
+
+#### Documentación
+- Documentos actualizados: `README.md`, `app/backend/README.md`,
+  `docs/arquitectura.md`, `docs/pruebas.md`, `BITACORA.md` y `MEMORIA.md`.
+- Se documentaron el contrato, el conteo Unicode, el mapeo de errores de BD y
+  la ejecución de las pruebas de integración.
+- IMP-003 permanece abierta; la deuda de auditoría no cambió.
+- No se marcaron pruebas funcionales del sistema completo como aprobadas.
+
+#### Pendientes o revisión
+- Tarea 4: completar las pruebas de integración del sistema.
+- Tarea 5: integración del frontend.
+- Integración de roles y migraciones con Terraform.
+- NGINX, Dockerfiles y despliegue final.
+
+#### Próximo paso
+- Planificar e implementar la Tarea 4 (pruebas de integración completas) con
+  autorización separada.
+
+### IMP-009 — Integración del frontend con la API real
+
+- Inicio: 2026-11-07
+- Última actualización: 2026-11-07
+- Área: Frontend / Integración
+- Estado: IMPLEMENTADA_PENDIENTE_VALIDACION
+- Requerimientos relacionados: RF-01 a RF-07 en su parte de interfaz;
+  arquitectura §4 y §7; pruebas PF-01 a PF-24 (solo partes ejecutadas).
+
+#### Cambios realizados
+- Se configuró `provideHttpClient(withFetch())` y un proxy de desarrollo
+  `/api/**` hacia `http://api:3000`, conservando el prefijo y sin reenviar
+  `/api-docs`.
+- Estado consume `/api/info` y `/api/health` de forma independiente, valida
+  los contratos en runtime y distingue API/PostgreSQL disponibles, BD no
+  disponible, API no disponible y respuestas inesperadas.
+- Registros implementa formulario reactivo, listado, creación, eliminación con
+  confirmación `MatDialog`, validación en puntos de código Unicode, errores por
+  campo y estados de carga, vacío, error y datos desactualizados.
+- Las mutaciones no se reintentan automáticamente. Un timeout, red, 5xx o
+  respuesta inválida se presenta como resultado no confirmado. Un 400/404 se
+  trata como fallo confirmado. Si la mutación se confirma y falla la recarga,
+  se informa “Operación completada; no se pudo actualizar el listado”.
+- Se añadió generación determinista de la versión de interfaz desde
+  `package.json`, hooks `prestart`/`prebuild`/`pretest` y versión `0.1.0`.
+- Se añadió el guard destructivo de pruebas y se modificó únicamente la suite
+  de integración del backend para ejecutarlo antes de cualquier `DELETE`.
+
+#### Archivos relevantes
+- `app/frontend/proxy.conf.json`
+- `app/frontend/scripts/generate-frontend-version.mjs`
+- `app/frontend/angular.json`
+- `app/frontend/package.json`, `app/frontend/package-lock.json`
+- `app/frontend/.gitignore`
+- `app/frontend/src/app/app.config.ts`
+- `app/frontend/src/app/core/`
+- `app/frontend/src/app/features/status/`
+- `app/frontend/src/app/features/records/`
+- `app/backend/tests/destructive-db-guard.ts`
+- `app/backend/tests/destructive-db-guard.spec.ts`
+- `app/backend/tests/records.integration.spec.ts`
+- `README.md`, `app/frontend/README.md`, `app/backend/README.md`,
+  `docs/arquitectura.md`, `docs/pruebas.md`, `MEMORIA.md`
+
+#### Validaciones
+- Frontend: `npm ci` exit 0; `npm run build` exit 0 con advertencia de
+  presupuesto inicial (528.53 kB frente a aviso de 500 kB, por debajo del error
+  de 1 MB); `npm test -- --watch=false` con 14 archivos y 60 pruebas.
+- Backend: `npm ci`, build y typecheck exit 0; 116 pruebas unitarias.
+- Integración backend con PostgreSQL real y guard: 11 archivos y 130 pruebas.
+- Guard negativo con `TEST_DB_CONFIRM` incorrecto: la suite falló con el
+  mensaje esperado antes de cualquier limpieza.
+- Marcador `test_guard.marker` creado por el setup administrativo; la
+  aplicación solo tiene `SELECT`.
+- HTTP por proxy: info, health y records correctos; `/api-docs` devolvió HTML
+  de Angular, no JSON de la API; CRUD completo correcto.
+- BD detenida: health 503 válido (1.016 s), info 200 (0.008 s) y records 503
+  (1.013 s); recuperación a 200.
+- API detenida: el proxy devolvió 500 `text/plain` sin health válido
+  (7.7–8.0 s); no se interpretó como PostgreSQL caído. Recuperación a 200.
+- Perfiles: web 4 CPU/4 GiB (compilación), API 2 CPU/2 GiB, PostgreSQL
+  1 CPU/1 GiB; solo web publicó `127.0.0.1:4200`; API y PostgreSQL sin puertos.
+- Auditorías: frontend 16 moderadas de desarrollo, 0 con `--omit=dev`;
+  backend 3 moderadas de desarrollo, 0 con `--omit=dev`.
+- Recursos temporales eliminados tras la validación automática.
+- Validación visual, teclado, foco y responsive: pendiente en navegador real.
+  No se afirma que se haya ejecutado.
+
+#### Documentación
+- Documentos actualizados: `README.md`, `app/frontend/README.md`,
+  `app/backend/README.md`, `docs/arquitectura.md`, `docs/pruebas.md`,
+  `BITACORA.md` y `MEMORIA.md`.
+- Se documentaron proxy, generación de versión, guard destructivo y
+  clasificación de estados/mutaciones.
+- IMP-003 permanece abierta.
+- No se marcaron pruebas del sistema completo como aprobadas.
+
+#### Pendientes o revisión
+- Validación manual en navegador de la integración actual.
+- Completar pruebas del sistema completo cuando existan NGINX y Terraform.
+- Integración de roles y migraciones con Terraform.
+- NGINX, Dockerfiles y despliegue final.
+
+#### Próximo paso
+- Ejecutar la validación manual de IMP-009; después avanzar con NGINX,
+  Dockerfiles y Terraform, sin reabrir tareas completadas.
 
 <!--
 Plantilla para cada implementación:

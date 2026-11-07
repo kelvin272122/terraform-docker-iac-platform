@@ -29,6 +29,8 @@ No prometer un mínimo de hardware sin medirlo.
 ## 3. Política de versiones
 
 - npm con package-lock.json y npm ci.
+- Backend: pg 8.23.1 como dependencia de runtime; @types/pg 8.23.1 y
+  node-pg-migrate 9.0.0 como dependencias de desarrollo/migración.
 - .nvmrc como referencia de la versión Node usada en contenedores.
 - Restricción de versión Terraform.
 - Restricciones de providers y .terraform.lock.hcl versionado.
@@ -43,8 +45,9 @@ Construcción previa a Terraform.
 API:
 - Build multietapa.
 - Compilar TypeScript.
-- Incorporar dependencias runtime y herramienta de migración.
-- Incorporar migraciones.
+- Incorporar dependencias runtime.
+- Incorporar migraciones; la herramienta de migración puede incluirse para la
+  operación administrativa, pero el proceso runtime no la requiere.
 - Ejecutar API como usuario no root.
 
 Frontend:
@@ -62,14 +65,17 @@ Frontend:
 
 Etapa inicial sin backend:
 - No configurar proxy /api ni activar simulación.
-- NGINX devuelve HTTP 404 en texto plano para /api y /api/*,
-  indicando que la API todavía no está configurada.
+- NGINX devuelve HTTP 404 con JSON para /api y /api/*, indicando que la API
+  todavía no está configurada:
+  `{"error":{"code":"API_NOT_CONFIGURED","message":"La API aún no está configurada."}}`.
 - Esas rutas no deben devolver el HTML de Angular mediante el fallback SPA.
 - Al integrar el backend, sustituir esta respuesta temporal por el proxy
   definido en la arquitectura final.
 
 PostgreSQL:
 - Imagen oficial de la línea 17.
+- Etiqueta verificada: `postgres:17.11-bookworm` con digest
+  `sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994`.
 - Volumen en /var/lib/postgresql/data.
 
 Etiquetas de aplicación:
@@ -150,6 +156,26 @@ Desde la raíz, una vez implementados los scripts:
 
 La aplicación puede responder antes de terminar las migraciones.
 El despliegue solo se considera listo después de migración y salud exitosas.
+
+### Migraciones en la etapa actual (Tarea 2)
+
+- Implementadas y verificadas a nivel de backend con PostgreSQL 17 real
+  descartable. La integración con Terraform y los scripts de despliegue sigue
+  pendiente.
+- El comando se ejecuta desde `app/backend` y requiere las dependencias de
+  desarrollo/migración instaladas con `npm ci`:
+  `npm run db:migrate`.
+- Usa `MIGRATION_DATABASE_URL` con credenciales administrativas solo durante su
+  ejecución. La API no recibe esa variable.
+- Migraciones SQL en `app/database/migrations/`; historial en la tabla
+  `pgmigrations`.
+- Tras migrar, ejecutar como administrador
+  `app/database/scripts/grant-app-privileges.sql` con las variables psql
+  `database_name` y `app_user`. El script es idempotente y no contiene
+  secretos.
+- El rol de aplicación debe existir previamente; su creación corresponde a la
+  inicialización del entorno (Terraform en la etapa de infraestructura).
+- Reejecutar `npm run db:migrate` sin pendientes no modifica datos.
 
 Mantener README.md alineado con los comandos implementados y el flujo
 de trabajo dentro de contenedores.

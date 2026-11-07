@@ -68,6 +68,26 @@ Decisiones visuales de la primera interfaz:
 - Estados sin integración: textos neutrales de «Pendiente de integración» o
   «Sin comprobaciones realizadas», sin métricas ni indicadores ficticios.
 
+Integración con la API real:
+- El cliente usa rutas relativas `/api`; no hay URLs absolutas de localhost ni
+  CORS abierto.
+- Proxy de desarrollo `/api/**` hacia `http://api:3000`; conserva el prefijo y
+  no reenvía `/api-docs`.
+- `/api/info` y `/api/health` se consultan de forma independiente. Un fallo de
+  una no descarta la respuesta válida de la otra.
+- Health 200 válido confirma API y PostgreSQL disponibles. Health 503 con
+  cuerpo válido confirma API disponible y PostgreSQL no disponible, y cuenta
+  como comprobación actual. Timeout, red, proxy o contrato inválido dejan
+  PostgreSQL como desconocido.
+- No se muestra éxito ante una respuesta inválida.
+- Registros valida los contratos en runtime. En mutaciones, 400/404 son
+  fallos confirmados; 5xx, timeout, red o respuesta inválida se presentan como
+  resultado no confirmado, sin reintentos automáticos.
+- La versión de interfaz se genera de forma determinista desde `package.json`
+  durante la compilación y es independiente de `APP_VERSION` del backend.
+- Las pruebas unitarias usan respuestas controladas; la aplicación real no
+  sustituye datos ni activa simulación ante fallos.
+
 Endurecimiento del entorno de desarrollo:
 - Comandos en contenedores con usuario no root, `--cap-drop=ALL`,
   `--security-opt=no-new-privileges:true`, límites por contenedor,
@@ -102,11 +122,28 @@ Simulación:
 - Logs en stdout/stderr, sin secretos.
 - Cierre ordenado del servidor y pool ante SIGTERM.
 
+Timeouts (conceptos distintos):
+- Recepción de la solicitud HTTP: límite del servidor para recibir el cuerpo;
+  no equivale al tiempo total de procesamiento de la ruta.
+- Procesamiento de la ruta: la base inicial no incorpora cancelación compleja.
+- Adquisición/conexión al pool de PostgreSQL: 1 segundo
+  (`connectionTimeoutMillis`).
+- Consulta SQL: 2 segundos en la comprobación de salud (`query_timeout` y
+  `statement_timeout`), dentro del máximo de 3 segundos.
+- Duración total de `GET /api/health`: 3 segundos como plazo de aplicación.
+- Espera del frontend: máximo 8 segundos.
+- El cierre ordenado ante SIGTERM tiene una espera acotada.
+- `server.requestTimeout` no se usa como límite de procesamiento ni de
+  consulta; solo regula la recepción de la solicitud HTTP.
+
 Variables:
 - APP_ENV: dev o prod.
 - APP_VERSION: etiqueta de la versión.
 - PORT: 3000.
-- DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD.
+- DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD: credenciales de aplicación,
+  obligatorias desde la Tarea 2.
+- MIGRATION_DATABASE_URL: credenciales administrativas usadas únicamente por
+  el comando de migración; la API en ejecución no la recibe.
 
 Instancia:
 - Usar hostname del contenedor como identificador diagnóstico.
@@ -142,10 +179,14 @@ Métodos no implementados no forman parte del contrato.
 {
   "environment": "dev",
   "apiVersion": "v1",
+  "appVersion": "0.1.0",
   "instanceId": "hostname-del-contenedor"
 }
 
-No depende de una consulta a PostgreSQL.
+- `apiVersion` identifica la versión del contrato.
+- `appVersion` identifica la versión del backend y procede de `APP_VERSION`.
+- No depende de una consulta a PostgreSQL.
+- No representa la versión de la interfaz.
 
 ### GET /api/health
 Ejecuta SELECT 1 usando las credenciales de aplicación.
@@ -184,6 +225,20 @@ No devuelve SQL, credenciales ni stack traces.
 
 Sin paginación en esta versión.
 
+Decisiones de contrato para Registros:
+- Orden por `created_at DESC` y desempate por `id DESC`.
+- Fechas UTC serializadas con `toISOString()`.
+- Identificadores generados por el servidor con `randomUUID()`.
+- Los parámetros de ruta aceptan UUID canónicos; no se restringen a UUID v4.
+  Se aceptan mayúsculas y minúsculas y se normaliza a minúsculas para consultar.
+- Recorte externo con `trim()` de JavaScript antes de validar y almacenar.
+- Las longitudes se cuentan en puntos de código Unicode (`Array.from`), lo que
+  coincide con `char_length` y `VARCHAR(n)` de PostgreSQL. No se usan unidades
+  UTF-16 de JavaScript.
+- Se rechazan caracteres NUL, que PostgreSQL no puede almacenar en `text`.
+- El listado obtiene `items` y `total` en una sola consulta con
+  `count(*) OVER()`, sin una consulta separada de conteo.
+
 ### POST /api/records
 Entrada:
 {
@@ -217,26 +272,46 @@ fields es opcional.
 
 Códigos:
 - VALIDATION_ERROR: 400.
+- NOT_FOUND: 404 para rutas de API desconocidas.
 - RECORD_NOT_FOUND: 404.
+- PAYLOAD_TOO_LARGE: 413 cuando el cuerpo JSON supera 16 KiB.
 - DATABASE_UNAVAILABLE: 503.
 - INTERNAL_ERROR: 500.
 
+Un JSON malformado se responde como 400 `VALIDATION_ERROR` con un mensaje
+seguro. No se exponen stack traces ni detalles internos.
+
 Las rutas /api desconocidas devuelven 404 JSON.
+
+Mapeo de errores de base de datos:
+- 503 `DATABASE_UNAVAILABLE`: códigos de conexión de Node (`ECONNREFUSED`,
+  `ECONNRESET`, `ETIMEDOUT`, `ENOTFOUND`, `EHOSTUNREACH`, `EAI_AGAIN`,
+  `EPIPE`), timeout de adquisición del pool, SQLSTATE de clase `08`, `57P01`,
+  `57P02`, `57P03`, `53300` y `53400`.
+- 500 `INTERNAL_ERROR`: restricciones (`23502`, `23514`, `22001`), permisos
+  (`42501`), errores de programación o esquema (`42601`, `42P01`, `22P02`) y
+  cualquier error no clasificado.
+- No se convierte cualquier error SQL en `DATABASE_UNAVAILABLE`.
 
 ## 8. Migraciones y credenciales
 
 - node-pg-migrate; versiones exactas bloqueadas con npm.
 - Migraciones SQL versionadas en app/database/migrations/.
-- La imagen API incorpora migraciones y su ejecutor.
+- `node-pg-migrate` es una dependencia de desarrollo/migración: el runtime de
+  la API no la necesita. La migración se ejecuta como operación administrativa
+  separada, no durante el arranque de la API ni desde solicitudes HTTP.
 - Ejecutar npm run db:migrate mediante un paso explícito de despliegue.
 - Reejecutar sin migraciones pendientes no modifica datos.
-- No ejecutar migraciones desde solicitudes HTTP.
 - No borrar datos ni revertir automáticamente.
+- Los privilegios se aplican con un script administrativo idempotente separado
+  (`app/database/scripts/grant-app-privileges.sql`).
 
 Credenciales:
 - Administrador para inicialización y migración.
 - Usuario de aplicación separado, sin superusuario ni permisos DDL.
-- Usuario de aplicación con permisos de conexión y CRUD sobre records.
+- Usuario de aplicación con permisos de conexión y `SELECT`, `INSERT` y
+  `DELETE` sobre records. Sin `UPDATE`, `CREATE`, `ALTER`, `DROP` ni
+  `TRUNCATE`.
 - La API en ejecución recibe solo credenciales de aplicación.
 - La migración recibe credenciales administrativas únicamente durante su ejecución.
 

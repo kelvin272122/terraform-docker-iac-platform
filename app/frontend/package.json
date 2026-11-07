@@ -1,8 +1,12 @@
 {
   "name": "iac-panel-frontend",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "scripts": {
     "ng": "ng",
+    "generate:version": "node scripts/generate-frontend-version.mjs",
+    "prestart": "npm run generate:version",
+    "prebuild": "npm run generate:version",
+    "pretest": "npm run generate:version",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",

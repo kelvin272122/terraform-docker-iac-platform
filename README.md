@@ -3,8 +3,8 @@
 La meta del proyecto es una plataforma web local completa de tres capas
 (Angular, API Express y PostgreSQL), con NGINX como servidor web y reverse
 proxy, desplegada con Terraform y Docker. Esa plataforma completa sigue
-siendo el objetivo pendiente; por ahora existe la base del frontend y su
-primera estructura visual.
+siendo el objetivo pendiente; el frontend ya está integrado con la API y
+PostgreSQL, y faltan NGINX, Dockerfiles y Terraform.
 El alcance, la arquitectura y el despliegue detallados están en `docs/`.
 
 ## Estado actual
@@ -15,23 +15,37 @@ El alcance, la arquitectura y el despliegue detallados están en `docs/`.
 - Primera estructura visual con Material/CDK 21.2.14: navegación «Estado» y
   «Registros», rutas `/estado` y `/registros`, redirección desde `/`, página
   404, logo local y diseño adaptable.
-- Estado y Registros muestran solo estructuras y mensajes neutrales; no hay
-  llamadas a `/api` ni métricas ficticias.
-- Estructura visual y navegación: implementadas y validadas manualmente por el
-  usuario el 2026-11-05. La validación no fue automatizada ni ejecutada por el
-  agente y no cubre NGINX, Terraform ni el despliegue final.
-- Integración API, comprobaciones reales de servicios, dashboard funcional,
-  formularios y listados: pendientes.
-- Backend, base de datos, Dockerfiles, NGINX y Terraform: pendientes.
-- La respuesta temporal de `/api` para la etapa sin backend queda pendiente
-  de definir para NGINX (contradicción registrada en `BITACORA.md`).
+- Estado y Registros consumen la API real: `/api/info`, `/api/health` y
+  `/api/records`. El frontend no usa datos simulados ni activa simulación ante
+  fallos.
+- Desarrollo con proxy `/api/**` hacia el alias `api`; rutas relativas y
+  versión de interfaz generada desde `package.json`.
+- Estructura visual y navegación base: validadas manualmente por el usuario el
+  2026-11-05. Esa validación no cubre la integración nueva, NGINX, Terraform ni
+  el despliegue final.
+- La validación visual, de teclado, foco y responsive de la integración actual
+  sigue pendiente de un navegador real.
+- Backend con `/api/info`, `/api/health` y `/api/records`, pool PostgreSQL,
+  configuración `DB_*` y migraciones versionadas implementados y validados con
+  PostgreSQL 17 real. Dockerfiles, NGINX y Terraform: pendientes.
+- `/api/info` sigue disponible y `/api/health` responde 503 cuando PostgreSQL
+  no está accesible.
+- La respuesta temporal de `/api` está definida en `docs/arquitectura.md` y
+  `docs/despliegue.md` como 404 JSON con código `API_NOT_CONFIGURED`; la
+  configuración de NGINX sigue pendiente de implementación.
 
 ## Deuda de seguridad pendiente
 
-`npm audit` mantiene 16 alertas moderadas en dependencias de desarrollo
-(`glob` y `minimatch`) que llegan por Angular CLI 21. No están corregidas y
-no se silencian. El detalle, la cadena afectada y las condiciones de revisión
-están en `BITACORA.md` (IMP-003).
+`npm audit` del frontend mantiene 16 alertas moderadas en dependencias de
+desarrollo (`glob` y `minimatch`) que llegan por Angular CLI 21. No están
+corregidas y no se silencian. El detalle, la cadena afectada y las condiciones
+de revisión están en `BITACORA.md` (IMP-003).
+
+El backend incorpora 3 alertas moderadas en dependencias de
+desarrollo/migración (`node-pg-migrate`, `glob` y `minimatch`), registradas
+por separado. El runtime de la API no requiere `node-pg-migrate`.
+`npm audit --omit=dev` da 0 en el alcance auditado; eso no corrige las CVE ni
+sustituye la auditoría completa.
 
 ## Prerrequisitos
 
@@ -57,13 +71,22 @@ Versiones usadas y verificadas:
 
 Ejecutar desde la raíz del repositorio.
 
+La versión de interfaz se genera de forma determinista desde
+`app/frontend/package.json` con `npm run generate:version`; los hooks
+`prestart`, `prebuild` y `pretest` la regeneran. El archivo generado está
+ignorado por Git. El proxy de desarrollo está en `app/frontend/proxy.conf.json`
+y se aplica por defecto desde `angular.json`: `/api/**` se reenvía a
+`http://api:3000` conservando el prefijo; `/api-docs` no se reenvía.
+
 Los comandos siguientes usan el perfil endurecido validado en IMP-005:
 usuario no root, `--cap-drop=ALL`, `no-new-privileges`, límites por
 contenedor, raíz de solo lectura y `/tmp` en tmpfs. El montaje
 `app/frontend` permanece `rw` porque npm y Angular necesitan escribir.
-Límites: instalación, pruebas y servidor usan 2 CPU y 2 GiB; compilación usa
-4 CPU y 4 GiB; 512 PIDs; swap igual a memoria. En esta validación `/tmp`
-quedó con `noexec` por Docker; no se asume como comportamiento universal.
+Límites: instalación usa 2 CPU y 2 GiB. Pruebas y servidor de desarrollo usan
+4 CPU y 4 GiB porque Angular compila; con 2 GiB `ng test` fue terminado
+(exit 137). Compilación usa 4 CPU y 4 GiB; 512 PIDs; swap igual a memoria. En
+esta validación `/tmp` quedó con `noexec` por Docker; no se asume como
+comportamiento universal.
 Estas medidas son compensatorias: no corrigen las alertas de IMP-003. Docker
 sigue en modo rootful y `app/frontend` continúa montado `rw`.
 
@@ -114,7 +137,7 @@ docker run --rm \
   --cap-drop=ALL \
   --security-opt=no-new-privileges:true \
   --pids-limit=512 \
-  --cpus=2 --memory=2g --memory-swap=2g \
+  --cpus=4 --memory=4g --memory-swap=4g \
   --read-only \
   --tmpfs /tmp:rw,nosuid,nodev,size=1g,mode=1777 \
   -e HOME=/tmp/ng-home -e npm_config_cache=/tmp/npm-cache \
@@ -124,7 +147,8 @@ docker run --rm \
   sh -lc 'mkdir -p "$HOME" "$npm_config_cache" && npm test -- --watch=false'
 ```
 
-Resultado verificado: 5 archivos de pruebas y 9 pruebas aprobadas.
+Resultado verificado: 14 archivos y 60 pruebas aprobadas. La compilación de
+pruebas requiere el perfil 4 CPU/4 GiB.
 
 ### Servidor de desarrollo
 
@@ -137,7 +161,7 @@ docker run --rm --init \
   --cap-drop=ALL \
   --security-opt=no-new-privileges:true \
   --pids-limit=512 \
-  --cpus=2 --memory=2g --memory-swap=2g \
+  --cpus=4 --memory=4g --memory-swap=4g \
   --read-only \
   --tmpfs /tmp:rw,nosuid,nodev,size=1g,mode=1777 \
   -e HOME=/tmp/ng-home -e npm_config_cache=/tmp/npm-cache \
@@ -148,6 +172,16 @@ docker run --rm --init \
 ```
 
 Acceso local: `http://127.0.0.1:4200/`. Para detenerlo, usar `Ctrl+C`.
+
+### Entorno integrado de desarrollo
+
+- Red frontend no interna: Angular y API; alias `api`.
+- Red backend interna: API y PostgreSQL; alias `postgres`.
+- API en ambas redes; PostgreSQL solo en la backend.
+- Solo Angular publica `127.0.0.1:4200`. API y PostgreSQL no publican puertos.
+- Comando de proxy: `npm start -- --host 0.0.0.0 --port 4200`.
+- Las instrucciones completas con nombres únicos y variables están en
+  [app/frontend/README.md](app/frontend/README.md).
 
 Resultado verificado: el contenedor escuchó en `0.0.0.0:4200`, el host publicó
 solo `127.0.0.1:4200` y la respuesta HTTP fue 200.
@@ -176,9 +210,35 @@ Siguen pendientes la integración API, las comprobaciones reales de servicios,
 los formularios, los listados y la resolución de la deuda de seguridad
 registrada en `BITACORA.md`.
 
+## Backend (API)
+
+Base Express 5 + TypeScript en `app/backend/`. Implementa `GET /api/info`,
+`GET /api/health` con `SELECT 1` real, `GET/POST/DELETE /api/records`,
+respuestas JSON para rutas desconocidas, límite JSON de 16 KiB, errores seguros,
+pool de PostgreSQL y cierre ordenado ante SIGTERM.
+
+Registros usa SQL parametrizado, UUID generado por el servidor, validación de
+tipos y longitudes en puntos de código Unicode, y el listado obtiene `items` y
+`total` en una sola consulta. La integración con la interfaz sigue pendiente.
+
+Variables requeridas: `APP_ENV` (`dev` o `prod`), `APP_VERSION`, `DB_HOST`,
+`DB_NAME`, `DB_USER` y `DB_PASSWORD`; `PORT` y `DB_PORT` son opcionales y valen
+3000 y 5432. `MIGRATION_DATABASE_URL` se usa solo durante la migración
+administrativa; la API no la recibe.
+
+Migraciones SQL en `app/database/migrations/`; el comando es `npm run db:migrate`
+desde `app/backend` con las dependencias de migración instaladas. Los
+privilegios del rol de aplicación se aplican con
+`app/database/scripts/grant-app-privileges.sql`.
+
+Los comandos endurecidos, las pruebas, la migración y la comprobación HTTP en
+red Docker dedicada están en [app/backend/README.md](app/backend/README.md).
+
 ## Estructura
 
 - `app/frontend/`: aplicación Angular.
+- `app/backend/`: API Express.
+- `app/database/`: migraciones SQL y script administrativo de privilegios.
 - `docs/`: requerimientos, arquitectura, despliegue y pruebas.
 - `infra/`: Terraform (pendiente).
 

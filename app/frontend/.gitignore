@@ -29,6 +29,9 @@ yarn-error.log
 !.vscode/mcp.json
 .history/*
 
+# Generated build metadata
+/src/app/core/frontend-version.generated.ts
+
 # Miscellaneous
 /.angular/cache
 .sass-cache/

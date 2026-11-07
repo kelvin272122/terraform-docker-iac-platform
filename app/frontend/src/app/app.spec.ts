@@ -1,10 +1,14 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TestBed } from '@angular/core/testing';
+import { importProvidersFrom } from '@angular/core';
+import { MatDialogModule } from '@angular/material/dialog';
 import { provideRouter, Router } from '@angular/router';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { BehaviorSubject, map, Observable, of } from 'rxjs';
 
 import { App } from './app';
 import { routes } from './app.routes';
+import { RecordsService } from './features/records/records.service';
+import { StatusService } from './features/status/status.service';
 
 interface BreakpointState {
   matches: boolean;
@@ -39,7 +43,32 @@ describe('App', () => {
       imports: [App],
       providers: [
         provideRouter(routes),
+        importProvidersFrom(MatDialogModule),
         { provide: BreakpointObserver, useValue: breakpointObserver },
+        {
+          provide: StatusService,
+          useValue: {
+            load: () =>
+              of({
+                info: {
+                  ok: false,
+                  failure: { kind: 'network', message: 'Sin conexión.' },
+                },
+                health: {
+                  ok: false,
+                  failure: { kind: 'network', message: 'Sin conexión.' },
+                },
+              }),
+          },
+        },
+        {
+          provide: RecordsService,
+          useValue: {
+            list: () => of({ ok: true, value: { items: [], total: 0 } }),
+            create: () => of({ ok: false, failure: { kind: 'network', message: 'x' } }),
+            remove: () => of({ ok: true, value: undefined }),
+          },
+        },
       ],
     }).compileComponents();
   });

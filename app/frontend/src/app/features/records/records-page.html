@@ -1,16 +1,184 @@
-<section class="page" aria-labelledby="records-title">
+<section class="page" aria-labelledby="records-title" [attr.aria-busy]="loadingList()">
   <header class="page__header">
     <h1 id="records-title">Registros</h1>
     <p>Gestión de los registros de demostración.</p>
   </header>
 
-  <mat-card appearance="outlined" class="empty-state">
+  <mat-card appearance="outlined" class="form-card">
+    <mat-card-header>
+      <mat-card-title>Crear registro</mat-card-title>
+    </mat-card-header>
     <mat-card-content>
-      <h2>Funcionalidad pendiente de implementación</h2>
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Título</mat-label>
+          <input
+            matInput
+            formControlName="title"
+            type="text"
+            autocomplete="off"
+            [attr.aria-describedby]="
+              titleError() ? 'title-help title-error' : 'title-help'
+            "
+            [attr.aria-invalid]="titleError() ? 'true' : null"
+          />
+          <mat-hint id="title-help">
+            Obligatorio. Máximo {{ titleMax }} caracteres.
+            {{ titleLength() }} / {{ titleMax }}
+          </mat-hint>
+          @if (titleError(); as error) {
+            <mat-error id="title-error">{{ error }}</mat-error>
+          }
+        </mat-form-field>
+        @if (titleServerError(); as error) {
+          <p class="field-error" role="alert">{{ error }}</p>
+        }
+
+        <mat-form-field appearance="outline">
+          <mat-label>Descripción (opcional)</mat-label>
+          <textarea
+            matInput
+            formControlName="description"
+            rows="3"
+            autocomplete="off"
+            [attr.aria-describedby]="
+              descriptionError() ? 'description-help description-error' : 'description-help'
+            "
+            [attr.aria-invalid]="descriptionError() ? 'true' : null"
+          ></textarea>
+          <mat-hint id="description-help">
+            Máximo {{ descriptionMax }} caracteres.
+            {{ descriptionLength() }} / {{ descriptionMax }}
+          </mat-hint>
+          @if (descriptionError(); as error) {
+            <mat-error id="description-error">{{ error }}</mat-error>
+          }
+        </mat-form-field>
+        @if (descriptionServerError(); as error) {
+          <p class="field-error" role="alert">{{ error }}</p>
+        }
+
+        <div class="form-actions">
+          <button mat-flat-button type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Guardando…' : 'Crear registro' }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  @if (successMessage(); as message) {
+    <p class="message message--success" role="status" aria-live="polite">
+      {{ message }}
+    </p>
+  }
+
+  @if (formError(); as message) {
+    <p class="message message--error" role="alert">{{ message }}</p>
+  }
+
+  @if (formUnknown()) {
+    <div class="message message--warning" role="alert">
       <p>
-        El formulario y el listado se incorporarán cuando se integre la API.
-        Todavía no se ha consultado ningún registro.
+        No se pudo confirmar si el registro se guardó. Actualiza el listado
+        antes de volver a intentarlo.
       </p>
+      <button mat-stroked-button type="button" (click)="refreshList()">
+        Actualizar listado
+      </button>
+    </div>
+  }
+
+  @if (listError(); as message) {
+    <div class="message message--warning" role="status">
+      <p>{{ message }}</p>
+      <button mat-stroked-button type="button" (click)="refreshList()">
+        Actualizar listado
+      </button>
+    </div>
+  }
+
+  @if (listStale()) {
+    <p class="stale-note">
+      El listado mostrado puede estar desactualizado.
+      @if (lastLoadedAt(); as loadedAt) {
+        Última carga correcta: {{ loadedAt | localDateTime }}.
+      }
+    </p>
+  }
+
+  @if (deleteMessage(); as message) {
+    <p class="message message--success" role="status" aria-live="polite">
+      {{ message }}
+    </p>
+  }
+
+  @if (deleteError(); as message) {
+    <p class="message message--error" role="alert">{{ message }}</p>
+  }
+
+  @if (deleteUnknown()) {
+    <div class="message message--warning" role="alert">
+      <p>
+        No se pudo confirmar si el registro se eliminó. Actualiza el listado
+        antes de volver a intentarlo.
+      </p>
+      <button mat-stroked-button type="button" (click)="refreshList()">
+        Actualizar listado
+      </button>
+    </div>
+  }
+
+  <mat-card appearance="outlined" class="records-card">
+    <mat-card-header>
+      <mat-card-title>Listado</mat-card-title>
+      <mat-card-subtitle>Total: {{ total() }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="timezone-note">Fechas en tu hora local: {{ localTimeZone }}.</p>
+
+      @if (loadingList() && records().length === 0) {
+        <p role="status" aria-live="polite">Cargando registros…</p>
+      } @else if (records().length === 0 && !listError()) {
+        <p class="empty-state">No hay registros.</p>
+      } @else {
+        <div class="records-list">
+          @for (record of records(); track record.id) {
+            <article class="record-item">
+              <div class="record-item__content">
+                <h2>{{ record.title }}</h2>
+                <p class="record-item__description">
+                  {{ record.description ?? 'Sin descripción' }}
+                </p>
+                <p class="record-item__date">
+                  {{ record.createdAt | localDateTime }}
+                </p>
+              </div>
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="isDeleting(record) || deletingId() !== null"
+                [attr.aria-label]="'Eliminar ' + record.title"
+                (click)="confirmDelete(record)"
+              >
+                {{ isDeleting(record) ? 'Eliminando…' : 'Eliminar' }}
+              </button>
+            </article>
+          }
+        </div>
+      }
+
+      <div class="list-actions">
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="loadingList()"
+          [attr.aria-busy]="loadingList()"
+          (click)="refreshList()"
+        >
+          {{ loadingList() ? 'Actualizando…' : 'Actualizar' }}
+        </button>
+      </div>
     </mat-card-content>
   </mat-card>
 </section>

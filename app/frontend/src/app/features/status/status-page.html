@@ -1,21 +1,101 @@
-<section class="page" aria-labelledby="status-title">
+<section class="page" aria-labelledby="status-title" [attr.aria-busy]="loading()">
   <header class="page__header">
     <h1 id="status-title">Estado</h1>
     <p>Comprobaciones del despliegue local.</p>
   </header>
 
+  <p class="visually-hidden" role="status" aria-live="polite">{{ liveSummary() }}</p>
+
+  @if (hasStaleData()) {
+    <p class="status-banner" role="status">
+      Hay datos conservados que no pudieron renovarse en la última comprobación.
+      Se muestran como históricos.
+    </p>
+  }
+
+  @if (infoError() || healthError()) {
+    <div class="status-errors" role="alert">
+      @if (infoError(); as error) {
+        <p>Información del despliegue: {{ error }}</p>
+      }
+      @if (healthError(); as error) {
+        <p>Comprobación de salud: {{ error }}</p>
+      }
+    </div>
+  }
+
   <div class="status-grid">
-    @for (card of cards; track card.title) {
-      <mat-card appearance="outlined" class="status-card">
-        <mat-card-header>
-          <mat-card-title>{{ card.title }}</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <p class="status-card__value">{{ card.value }}</p>
-          <p class="status-card__description">{{ card.description }}</p>
-        </mat-card-content>
-      </mat-card>
-    }
+    <mat-card appearance="outlined" class="status-card">
+      <mat-card-header>
+        <mat-card-title>Entorno</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (info(); as infoValue) {
+          <p class="status-card__value">{{ infoValue.environment }}</p>
+          <p class="status-card__description">Origen: /api/info</p>
+          @if (infoStale()) {
+            <p class="status-stale">Dato histórico: no se pudo renovar.</p>
+          }
+        } @else {
+          <p class="status-card__value status-value--warning">No disponible</p>
+          <p class="status-card__description">No se pudo obtener /api/info.</p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="status-card">
+      <mat-card-header>
+        <mat-card-title>Versión de la interfaz</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="status-card__value">{{ frontendVersion }}</p>
+        <p class="status-card__description">Origen: package.json de la compilación.</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="status-card">
+      <mat-card-header>
+        <mat-card-title>Versión de la API</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (info(); as infoValue) {
+          <p class="status-card__value">{{ infoValue.appVersion }}</p>
+          <p class="status-card__description">Contrato {{ infoValue.apiVersion }}.</p>
+          @if (infoStale()) {
+            <p class="status-stale">Dato histórico: no se pudo renovar.</p>
+          }
+        } @else {
+          <p class="status-card__value status-value--warning">No disponible</p>
+          <p class="status-card__description">No se pudo obtener /api/info.</p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="status-card">
+      <mat-card-header>
+        <mat-card-title>API</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p [class]="'status-card__value ' + apiClass()">{{ apiLabel() }}</p>
+        <p class="status-card__description">
+          Determinado por la respuesta de /api/health y /api/info.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="status-card">
+      <mat-card-header>
+        <mat-card-title>PostgreSQL</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p [class]="'status-card__value ' + databaseClass()">
+          {{ databaseLabel() }}
+        </p>
+        <p class="status-card__description">
+          Solo se confirma con una respuesta válida de /api/health.
+        </p>
+      </mat-card-content>
+    </mat-card>
   </div>
 
   <mat-card appearance="outlined" class="status-meta">
@@ -23,25 +103,48 @@
       <dl class="status-meta__list">
         <div>
           <dt>Identificador de instancia</dt>
-          <dd>Pendiente de integración</dd>
+          <dd>
+            @if (info(); as infoValue) {
+              {{ infoValue.instanceId }}
+              @if (infoStale()) {
+                <span class="status-stale"> (histórico)</span>
+              }
+            } @else {
+              No disponible
+            }
+          </dd>
         </div>
         <div>
-          <dt>Última comprobación</dt>
-          <dd>Sin comprobaciones realizadas</dd>
+          <dt>Última comprobación de salud válida</dt>
+          <dd>
+            @if (lastHealthCheckAt(); as checkedAt) {
+              {{ checkedAt | localDateTime }}
+            } @else {
+              Sin comprobaciones válidas
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>Última vez con PostgreSQL disponible</dt>
+          <dd>
+            @if (lastHealthyAt(); as checkedAt) {
+              {{ checkedAt | localDateTime }}
+            } @else {
+              Sin comprobaciones correctas
+            }
+          </dd>
         </div>
       </dl>
 
       <button
         mat-stroked-button
         type="button"
-        disabled
-        aria-describedby="refresh-help"
+        [disabled]="loading()"
+        [attr.aria-busy]="loading()"
+        (click)="refresh()"
       >
-        Actualizar
+        {{ loading() ? 'Actualizando…' : 'Actualizar' }}
       </button>
-      <p id="refresh-help" class="status-meta__help">
-        La actualización se habilitará al integrar la API.
-      </p>
     </mat-card-content>
   </mat-card>
 </section>
