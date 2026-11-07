@@ -23,8 +23,9 @@ El alcance, la arquitectura y el despliegue detallados están en `docs/`.
 - Estructura visual y navegación base: validadas manualmente por el usuario el
   2026-11-05. Esa validación no cubre la integración nueva, NGINX, Terraform ni
   el despliegue final.
-- La validación visual, de teclado, foco y responsive de la integración actual
-  sigue pendiente de un navegador real.
+- Integración validada con Playwright 1.65.0 y Chromium 158 headless:
+  navegación, formularios, diálogo, teclado, foco, responsive y consola. Las
+  evidencias están en `docs/Evidencias/IMP-009/`.
 - Backend con `/api/info`, `/api/health` y `/api/records`, pool PostgreSQL,
   configuración `DB_*` y migraciones versionadas implementados y validados con
   PostgreSQL 17 real. Dockerfiles, NGINX y Terraform: pendientes.

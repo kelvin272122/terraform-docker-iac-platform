@@ -1,9 +1,9 @@
 # Memoria del proyecto
 
 ## Estado actual
-- Fase: frontend integrado con la API y PostgreSQL, backend con Registros,
-  migraciones y health; validación visual de la integración pendiente y
-  NGINX/Terraform por implementar.
+- Fase: frontend integrado con la API y PostgreSQL, validado con Playwright en
+  navegador real; backend con Registros, migraciones y health; NGINX/Terraform
+  por implementar.
 - `app/frontend/` contiene un workspace Angular 21 con standalone, routing,
   SCSS, TypeScript estricto, modo zoneless y sin SSR.
 - Angular Material y CDK `21.2.14` instalados; shell con navegación lateral,
@@ -20,7 +20,7 @@
   pendientes.
 - `package-lock.json` del frontend regenerado con Material/CDK; `AGENTS.md`
   intacto.
-- Pruebas frontend: 14 archivos y 60 pruebas aprobadas.
+- Pruebas frontend: 14 archivos y 62 pruebas aprobadas.
 - Pruebas backend: 11 archivos y 130 pruebas aprobadas (116 unitarias y 14 de
   integración con PostgreSQL real descartable y guard destructivo).
 - Auditoría backend completa: 3 alertas moderadas de desarrollo/migración;
@@ -79,11 +79,14 @@
 - IMP-006: base de API Express y contrato inicial. COMPLETADA.
 - IMP-007: PostgreSQL, migraciones, pool y `/api/health`. COMPLETADA.
 - IMP-008: operaciones HTTP de Registros. COMPLETADA.
-- IMP-009: integración del frontend con la API real.
-  IMPLEMENTADA_PENDIENTE_VALIDACION.
+- IMP-009: integración del frontend con la API real. COMPLETADA.
 
 ## Pendientes y advertencias
-- Validación manual en navegador de Estado y Registros integrados: pendiente.
+- Validación de navegador completada con Playwright 1.65.0/Chromium 158:
+  foco inicial en Cancelar, Enter, clic en Cancelar, Escape, Tab/Shift+Tab,
+  «Saltar al contenido», listado desactualizado con BD detenida, recuperación y
+  consola aprobados. La eliminación confirmada produce un DELETE 204 y el foco
+  posterior queda en el encabezado `#records-title`.
 - Pruebas del sistema completo y despliegue NGINX/Terraform: pendientes.
 - Deuda de seguridad de herramientas de migración del backend: 3 alertas
   moderadas (`node-pg-migrate`, `glob@13.0.7` y `minimatch@10.2.6`). El runtime
@@ -105,6 +108,11 @@
   quedó con `noexec`; no es un comportamiento universal de Docker.
 - La validación del perfil endurecido fue por comandos y HTTP, no visual. La
   validación visual de IMP-004 se conserva separada.
+- Evidencias de IMP-009:
+  - `docs/Evidencias/IMP-009/2026-11-07-browser/`
+  - `docs/Evidencias/IMP-009/2026-11-07-revalidacion-1/`
+  - `docs/Evidencias/IMP-009/2026-11-07-revalidacion-2/`
+- Imagen Playwright `v1.65.0-noble` conservada por digest (3.65 GB).
 - `ng test` y `ng serve` compilan la aplicación: se usó el perfil 4 CPU/4 GiB.
   Con 2 GiB `ng test` fue terminado (exit 137). La instalación conserva 2 CPU/2
   GiB.
@@ -117,12 +125,11 @@
   sin la autorización correspondiente.
 
 ## Siguiente paso
-1. Ejecutar la validación manual en navegador de IMP-009.
-2. Implementar NGINX y Dockerfiles.
-3. Integrar Terraform, roles y migraciones.
-4. Completar las pruebas del sistema completo.
+1. Implementar NGINX y Dockerfiles con autorización.
+2. Integrar Terraform, roles y migraciones.
+3. Completar las pruebas del sistema completo.
 
 ## Última actualización
 - Fecha: 2026-11-07.
-- Implementación relacionada: IMP-009 (integración del frontend con la API
-  real).
+- Implementación relacionada: IMP-009 (integración del frontend, corrección de
+  foco y revalidación en navegador).

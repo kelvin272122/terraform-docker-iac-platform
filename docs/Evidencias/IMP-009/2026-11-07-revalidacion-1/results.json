@@ -1,0 +1,227 @@
+{
+  "generatedAt": "2026-11-07T20:52:42.027Z",
+  "sandbox": false,
+  "sandboxNote": "chromiumSandbox:false, excepción autorizada para el contenedor temporal de esta aplicación local.",
+  "results": [
+    {
+      "case": "Carga estática mínima",
+      "method": "navegador",
+      "backend": "n/a",
+      "result": "FALLÓ",
+      "evidence": "smoke",
+      "limitation": "estática"
+    },
+    {
+      "case": "Carga de la aplicación Angular",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "estado",
+      "limitation": ""
+    },
+    {
+      "case": "Preparar registros reales",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Diálogo: Enter con foco inicial en Cancelar",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "dialogo-foco.png",
+      "limitation": ""
+    },
+    {
+      "case": "Diálogo: botón Cancelar no envía DELETE",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Diálogo: Escape no envía DELETE",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Diálogo: Tab y Shift+Tab confinan el foco",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Foco posterior tras eliminar confirmada",
+      "method": "navegador",
+      "backend": "real",
+      "result": "FALLÓ",
+      "evidence": "",
+      "limitation": "{\"tag\":\"BODY\",\"id\":\"\",\"text\":\"Saltar al contenidoPanel de verificación IaCEstadoRegistrosPanel de verificación IaCRegistrosGestión\",\"aria\":\"\",\"withinDialog\":false,\"connected\":true}"
+    },
+    {
+      "case": "Diálogo: confirmar Eliminar produce un DELETE 204 y foco posterior lógico",
+      "method": "navegador",
+      "backend": "real",
+      "result": "FALLÓ",
+      "evidence": "",
+      "limitation": "foco posterior no lógico: {\"tag\":\"BODY\",\"id\":\"\",\"text\":\"Saltar al contenidoPanel de verificación IaCEstadoRegistrosPanel de verificación IaCRegistrosGestión\",\"aria\":\"\",\"withinDialog\":false,\"connected\":true} (547ms)"
+    },
+    {
+      "case": "Saltar al contenido: destino y foco",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "estado-skip.png",
+      "limitation": ""
+    },
+    {
+      "case": "Listado desactualizado con PostgreSQL detenido",
+      "method": "navegador + host",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "registros-stale.png",
+      "limitation": ""
+    },
+    {
+      "case": "Listado recuperado tras reiniciar PostgreSQL",
+      "method": "navegador + host",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "registros-recuperado.png",
+      "limitation": ""
+    },
+    {
+      "case": "Consola y errores de página sin fallos inesperados",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    }
+  ],
+  "consoleEntries": [
+    {
+      "phase": "stale-db-down",
+      "expected": true,
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    }
+  ],
+  "unexpectedConsole": [],
+  "pageErrors": [],
+  "requestSummary": [
+    {
+      "phase": "carga-app",
+      "method": "GET",
+      "path": "/api/info",
+      "statusOrFailure": "200",
+      "count": 1
+    },
+    {
+      "phase": "carga-app",
+      "method": "GET",
+      "path": "/api/health",
+      "statusOrFailure": "200",
+      "count": 1
+    },
+    {
+      "phase": "preparar",
+      "method": "GET",
+      "path": "/api/records",
+      "statusOrFailure": "200",
+      "count": 4
+    },
+    {
+      "phase": "preparar",
+      "method": "POST",
+      "path": "/api/records",
+      "statusOrFailure": "201",
+      "count": 2
+    },
+    {
+      "phase": "dialogo-cancelar-enter",
+      "method": "GET",
+      "path": "/api/records",
+      "statusOrFailure": "200",
+      "count": 1
+    },
+    {
+      "phase": "dialogo-cancelar-click",
+      "method": "GET",
+      "path": "/api/records",
+      "statusOrFailure": "200",
+      "count": 1
+    },
+    {
+      "phase": "dialogo-escape",
+      "method": "GET",
+      "path": "/api/records",
+      "statusOrFailure": "200",
+      "count": 1
+    },
+    {
+      "phase": "dialogo-tab",
+      "method": "GET",
+      "path": "/api/records",
+      "statusOrFailure": "200",
+      "count": 1
+    },
+    {
+      "phase": "dialogo-confirmar",
+      "method": "GET",
+      "path": "/api/records",
+      "statusOrFailure": "200",
+      "count": 2
+    },
+    {
+      "phase": "dialogo-confirmar",
+      "method": "DELETE",
+      "path": "/api/records/4e762c4a-568c-4cf9-9139-0c9fa6c7ce92",
+      "statusOrFailure": "204",
+      "count": 1
+    },
+    {
+      "phase": "skip-link",
+      "method": "GET",
+      "path": "/api/info",
+      "statusOrFailure": "200",
+      "count": 2
+    },
+    {
+      "phase": "skip-link",
+      "method": "GET",
+      "path": "/api/health",
+      "statusOrFailure": "200",
+      "count": 2
+    },
+    {
+      "phase": "stale-db-down",
+      "method": "GET",
+      "path": "/api/records",
+      "statusOrFailure": "200",
+      "count": 1
+    },
+    {
+      "phase": "stale-db-down",
+      "method": "GET",
+      "path": "/api/records",
+      "statusOrFailure": "503",
+      "count": 1
+    },
+    {
+      "phase": "stale-recuperacion",
+      "method": "GET",
+      "path": "/api/records",
+      "statusOrFailure": "200",
+      "count": 1
+    }
+  ]
+}

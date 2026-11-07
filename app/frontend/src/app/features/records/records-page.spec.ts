@@ -6,6 +6,7 @@ import { Subject, of } from 'rxjs';
 import type { ApiFailure } from '../../core/models/api-error.model';
 import type { ApiResult } from '../../core/models/api-result.model';
 import type { RecordItem, RecordsList } from '../../core/models/record.model';
+import { ConfirmDeleteDialog } from './confirm-delete-dialog/confirm-delete-dialog';
 import { RecordsPage } from './records-page';
 import { RecordsService } from './records.service';
 
@@ -263,6 +264,26 @@ describe('RecordsPage', () => {
     expect(element.textContent).toContain('puede estar desactualizado');
   });
 
+  it('opens the delete dialog with autoFocus on the stable cancel selector', () => {
+    const dialog = createDialog(false);
+    configure(
+      createService({ list: vi.fn(() => of(listWith([record]))) }),
+      dialog,
+    );
+    const { fixture, element } = createPage();
+
+    clickDelete(element, fixture);
+
+    const open = dialog.open as unknown as { mock: { calls: unknown[][] } };
+    expect(open.mock.calls[0]?.[0]).toBe(ConfirmDeleteDialog);
+    expect(open.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        autoFocus: '.dialog-cancel',
+        restoreFocus: true,
+      }),
+    );
+  });
+
   it('does not call DELETE when deletion is cancelled', () => {
     const service = createService({
       list: vi.fn(() => of(listWith([record]))),
@@ -289,6 +310,22 @@ describe('RecordsPage', () => {
     expect(remove).toHaveBeenCalledWith(record.id);
     expect(element.textContent).toContain('Registro eliminado correctamente.');
     expect(element.textContent).toContain('Total: 0');
+  });
+
+  it('moves focus to the records heading after a confirmed deletion', () => {
+    const remove = vi.fn(() => of(ok<void>(undefined)));
+    const list = vi
+      .fn<RecordsService['list']>()
+      .mockReturnValueOnce(of(listWith([record])))
+      .mockReturnValueOnce(of(emptyList));
+    configure(createService({ list, remove }), createDialog(true));
+    const { fixture, element } = createPage();
+
+    clickDelete(element, fixture);
+
+    const heading = element.querySelector<HTMLHeadingElement>('#records-title');
+    expect(heading).not.toBeNull();
+    expect(document.activeElement).toBe(heading);
   });
 
   it('treats DELETE 404 as an already missing record', () => {

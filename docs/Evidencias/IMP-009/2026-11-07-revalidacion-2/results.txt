@@ -1,0 +1,17 @@
+IMP-009 revalidación 2 (2026-11-07T20:57:54.543Z)
+sandbox: chromiumSandbox:false
+APROBADO	navegador	n/a	Carga estática mínima
+APROBADO	navegador	real	Carga de la aplicación Angular
+APROBADO	navegador	real	Preparar registro real
+APROBADO	navegador	real	Regresión: foco inicial del diálogo en Cancelar
+APROBADO	navegador	real	Foco posterior verificado	{"tag":"H1","id":"records-title","text":"Registros","aria":"","withinDialog":false,"connected":true}
+APROBADO	navegador	real	Eliminar confirmado y foco posterior en destino lógico
+APROBADO	navegador	real	Consola y errores de página
+Solicitudes agregadas:
+GET	/api/info	200	1
+GET	/api/health	200	1
+GET	/api/records	200	5
+POST	/api/records	201	1
+DELETE	/api/records/2c8a7483-e6bd-459d-aa02-b35127368fbc	204	1
+console inesperados: 0
+pageErrors: 0

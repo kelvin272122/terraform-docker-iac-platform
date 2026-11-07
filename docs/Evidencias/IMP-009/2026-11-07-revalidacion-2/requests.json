@@ -1,0 +1,32 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/info",
+    "statusOrFailure": "200",
+    "count": 1
+  },
+  {
+    "method": "GET",
+    "path": "/api/health",
+    "statusOrFailure": "200",
+    "count": 1
+  },
+  {
+    "method": "GET",
+    "path": "/api/records",
+    "statusOrFailure": "200",
+    "count": 5
+  },
+  {
+    "method": "POST",
+    "path": "/api/records",
+    "statusOrFailure": "201",
+    "count": 1
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/records/2c8a7483-e6bd-459d-aa02-b35127368fbc",
+    "statusOrFailure": "204",
+    "count": 1
+  }
+]

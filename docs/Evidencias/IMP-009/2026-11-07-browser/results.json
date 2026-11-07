@@ -1,0 +1,300 @@
+{
+  "generatedAt": "2026-11-07T20:35:54.273Z",
+  "sandbox": false,
+  "sandboxNote": "chromiumSandbox:true falló en la prueba mínima con incompatibilidad de sandbox; se usó chromiumSandbox:false dentro del contenedor temporal.",
+  "results": [
+    {
+      "case": "Carga estática mínima",
+      "method": "navegador",
+      "backend": "n/a",
+      "result": "APROBADO",
+      "evidence": "smoke estático",
+      "limitation": ""
+    },
+    {
+      "case": "Carga de la aplicación Angular",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "redirect y render Angular",
+      "limitation": ""
+    },
+    {
+      "case": "Estado inicial: entorno, versiones e instancia",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "estado-inicial.png",
+      "limitation": ""
+    },
+    {
+      "case": "Actualización manual sin solicitudes duplicadas",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: estado vacío",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "registros-vacio.png",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: crear y verificar listado/total",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "registros-creados.png",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: persistencia tras recarga",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: descripción omitida muestra Sin descripción",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: límite de 100 emoji por puntos de código",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: rechazo de 101 emoji por puntos de código",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: límite de 500 y 501 en descripción",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: doble envío produce un solo POST",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: cancelar eliminación no envía DELETE",
+      "method": "navegador",
+      "backend": "real",
+      "result": "FALLÓ",
+      "evidence": "",
+      "limitation": "foco inicial del diálogo: Eliminar"
+    },
+    {
+      "case": "Registros: confirmar eliminación produce 204 y actualiza listado",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: error 400 por campo conserva formulario",
+      "method": "navegador",
+      "backend": "interceptada",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: timeout de POST muestra resultado no confirmado",
+      "method": "navegador",
+      "backend": "interceptada",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: respuesta perdida con persistencia real",
+      "method": "navegador",
+      "backend": "real + interceptación de respuesta",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: POST confirmado y recarga fallida conserva éxito",
+      "method": "navegador",
+      "backend": "real POST + GET interceptado",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: respuesta inválida no se muestra como éxito",
+      "method": "navegador",
+      "backend": "interceptada",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Estado: BD detenida, API responde y BD no disponible",
+      "method": "navegador + host",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "estado-db-down.png",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: BD detenida muestra error y datos desactualizados",
+      "method": "navegador + host",
+      "backend": "real",
+      "result": "FALLÓ",
+      "evidence": "registros-db-down.png",
+      "limitation": "locator.waitFor: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('.stale-note') to be visible\n"
+    },
+    {
+      "case": "Estado: recuperación de PostgreSQL",
+      "method": "navegador + host",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: recuperación del listado con PostgreSQL",
+      "method": "navegador + host",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Estado: API detenida deja BD desconocida",
+      "method": "navegador + host",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "estado-api-down.png",
+      "limitation": ""
+    },
+    {
+      "case": "Registros: API detenida muestra error",
+      "method": "navegador + host",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "registros-api-down.png",
+      "limitation": ""
+    },
+    {
+      "case": "Estado y Registros: recuperación de la API",
+      "method": "navegador + host",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Accesibilidad: enlace Saltar al contenido y foco visible",
+      "method": "navegador",
+      "backend": "real",
+      "result": "FALLÓ",
+      "evidence": "",
+      "limitation": "page.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "case": "Accesibilidad: diálogo con foco en Cancelar, Escape y retorno",
+      "method": "navegador",
+      "backend": "real",
+      "result": "FALLÓ",
+      "evidence": "",
+      "limitation": "page.goto: Navigation to \"http://localhost:4200/registros\" is interrupted by another navigation to \"http://localhost:4200/#main-content\"\nCall log:\n  - navigating to \"http://localhost:4200/registros\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "case": "Responsive: 360 px sin overflow y menú móvil",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "estado-360.png",
+      "limitation": ""
+    },
+    {
+      "case": "Responsive: breakpoint 959/960",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "estado-960.png",
+      "limitation": ""
+    },
+    {
+      "case": "Red: solicitudes /api mediante proxy y sin recursos externos",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Consola: errores inesperados",
+      "method": "navegador",
+      "backend": "real",
+      "result": "FALLÓ",
+      "evidence": "",
+      "limitation": "errores de consola: Failed to load resource: the server responded with a status of 503 (Service Unavailable) | Failed to load resource: the server responded with a status of 503 (Service Unavailable) | Failed to load resource: the server responded with a status of 500 (Internal Server Error) | Failed to load resource: the server responded with a status of 500 (Internal Server Error) | Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    }
+  ],
+  "consoleErrors": [
+    {
+      "intentional": true,
+      "text": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+    },
+    {
+      "intentional": true,
+      "text": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "intentional": true,
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "intentional": false,
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "intentional": false,
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "intentional": false,
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "intentional": false,
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "intentional": false,
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    }
+  ],
+  "pageErrors": [],
+  "apiRequestCount": 71,
+  "externalRequests": []
+}

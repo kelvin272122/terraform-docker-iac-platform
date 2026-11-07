@@ -208,6 +208,148 @@ Los comandos deben implementarse y comprobarse antes de declararlos operativos.
 - Esta validación no marca PF-01 a PF-24 como aprobadas para el sistema
   completo: no se ejecutó NGINX, Terraform ni la demostración integrada final.
 
+### Validación de navegador de IMP-009 con Playwright (2026-11-07)
+
+- Antecedente: `WebKitWebDriver` 2.54.2 con Epiphany 50.6 falló; la navegación
+  quedó en `about:blank` incluso con una página estática. Se detuvo esa vía.
+- Entorno: `mcr.microsoft.com/playwright:v1.65.0-noble` fijado por digest
+  `sha256:bc4fbb329a25287ed23e9216c97063646abdd1bf2da669a9895fa3e2078b2302`,
+  Playwright 1.65.0, Chromium 158.0.8127.18, Node 26 y Ubuntu noble.
+- Ejecución headless. `chromiumSandbox` se usó en `false`: el primer intento
+  con `true` falló por incompatibilidad de sandbox en la prueba mínima. La
+  excepción quedó limitada al contenedor temporal y a la aplicación local.
+- Conectividad: contenedor en la red frontend, regla de resolución
+  `MAP localhost 172.20.0.3`; Chromium cargó la aplicación real por
+  `http://localhost:4200`. No se modificó `allowedHosts`, no se publicó en
+  `0.0.0.0` ni se usó red host o socket Docker.
+- Evidencias sanitizadas: `docs/Evidencias/IMP-009/2026-11-07-browser/`.
+- Capturas: Estado inicial, Registros con datos, Estado con BD detenida,
+  Estado con API detenida, Registros con API detenida, 360 px y 960 px.
+- La captura esperada de Registros con BD detenida no se generó porque el caso
+  se detuvo en la aserción de datos desactualizados.
+
+#### Matriz de resultados
+
+| Caso | Método | Backend | Resultado | Limitación |
+|---|---|---|---|---|
+| Carga estática mínima | Navegador | N/A | APROBADO | — |
+| Carga de la aplicación Angular | Navegador | Real | APROBADO | — |
+| Estado inicial: entorno, versiones e instancia | Navegador | Real | APROBADO | — |
+| Actualización manual sin duplicados | Navegador | Real | APROBADO | 1 info y 1 health por acción |
+| Registros: estado vacío | Navegador | Real | APROBADO | — |
+| Registros: crear y verificar listado/total | Navegador | Real | APROBADO | — |
+| Registros: persistencia tras recarga | Navegador | Real | APROBADO | — |
+| Registros: descripción omitida | Navegador | Real | APROBADO | — |
+| Registros: 100 emoji | Navegador | Real | APROBADO | — |
+| Registros: rechazo de 101 emoji | Navegador | Real | APROBADO | — |
+| Registros: límites 500/501 de descripción | Navegador | Real | APROBADO | — |
+| Registros: doble envío | Navegador | Real | APROBADO | Doble submit programático en navegador; 1 POST |
+| Registros: cancelar eliminación | Navegador | Real | FALLÓ | Foco inicial en «Eliminar», no en «Cancelar»; el caso se detuvo antes de cancelar |
+| Registros: confirmar eliminación | Navegador | Real | APROBADO | 204 y listado actualizado |
+| Registros: error 400 por campo | Navegador | Interceptada | APROBADO | Backend no ejecutado |
+| Registros: timeout de POST | Navegador | Interceptada | APROBADO | Backend no ejecutado; sin reintento |
+| Registros: respuesta perdida con persistencia real | Navegador | Real + respuesta interceptada | APROBADO | POST real reenviado al backend y persistencia verificada |
+| Registros: POST confirmado y recarga fallida | Navegador | Real POST + GET interceptado | APROBADO | Éxito conservado y listado desactualizado |
+| Registros: respuesta inválida | Navegador | Interceptada | APROBADO | Backend no ejecutado |
+| Estado: BD detenida | Navegador + host | Real | APROBADO | API disponible, BD no disponible; sin marcar histórico |
+| Registros: BD detenida | Navegador + host | Real | FALLÓ (expectativa) | Se mostró error; no se mostró `stale` porque la página se cargó sin datos previos. El mecanismo stale se aprobó en la recarga fallida |
+| Recuperación de PostgreSQL | Navegador + host | Real | APROBADO | — |
+| Recuperación del listado con PostgreSQL | Navegador + host | Real | APROBADO | — |
+| Estado: API detenida | Navegador + host | Real | APROBADO | BD desconocida, no presentada como caída |
+| Registros: API detenida | Navegador + host | Real | APROBADO | Error mostrado, sin datos ficticios |
+| Recuperación de la API | Navegador + host | Real | APROBADO | — |
+| Enlace Saltar al contenido | Navegador | Real | FALLÓ (sincronización) | Tab y foco parcialmente comprobados; la navegación de hash destruyó el contexto |
+| Diálogo: foco, Escape y retorno | Navegador | Real | BLOQUEADO | Interrumpido por navegación de hash pendiente; foco inicial ya falló en el caso de cancelación |
+| Responsive 360 px | Navegador | Real | APROBADO | Sin overflow; menú móvil |
+| Breakpoint 959/960 | Navegador | Real | APROBADO | — |
+| Red y proxy | Navegador | Real | APROBADO | 71 solicitudes API por `/api`; 0 recursos externos |
+| Consola sin errores inesperados | Navegador | Real | FALLÓ (clasificación) | 5 errores de red de fases deliberadas de BD/API detenidas; 0 `pageerror`; revisión manual no evidencia error inesperado |
+
+#### Incidencia de accesibilidad
+
+- Caso: foco inicial del diálogo de eliminación.
+- Pasos: con servicios activos, abrir `/registros`, pulsar «Eliminar» en un
+  registro y leer `document.activeElement`.
+- Esperado: foco en «Cancelar».
+- Observado: foco en «Eliminar».
+- Impacto: el diálogo permite confirmar una acción destructiva con Enter sin
+  desplazar el foco de forma segura. No se corrigió el código.
+- Propuesta pendiente de aprobación: fijar el foco inicial en «Cancelar»
+  mediante `cdkFocusInitial`/`A11yModule` o un selector `autoFocus` explícito,
+  y repetir las comprobaciones de cancelación, Escape y retorno de foco.
+
+#### Limitaciones de ejecución
+
+- El caso de cancelación no llegó a enviar/verificar el DELETE por el fallo de
+  foco; no se afirma que cancele correctamente.
+- El caso de enlace de salto no completó la comprobación posterior al Enter.
+- El caso de diálogo con Escape/retorno quedó bloqueado por la navegación de
+  hash pendiente del caso anterior.
+- El caso de Registros con BD detenida necesita cargar el listado con datos
+  antes de detener PostgreSQL para evaluar `stale`.
+- La clasificación automática de consola no marcó como intencionales los
+  errores de red de las paradas de BD/API.
+- No se modificó código de la aplicación para corregir estas incidencias.
+- Estado en esa ejecución: pendiente de corrección. La corrección y la
+  revalidación final se registran a continuación.
+
+### Corrección y revalidación final de IMP-009 (2026-11-07)
+
+- Causa del defecto: el diálogo abría con `autoFocus: 'first-tabbable'` y el
+  foco inicial quedaba en «Eliminar».
+- Corrección: se añadió la clase estable `dialog-cancel` al botón «Cancelar» y
+  se configuró `autoFocus: '.dialog-cancel'` en la apertura del diálogo.
+- Foco posterior a una eliminación confirmada: el primer ajuste apuntó al
+  botón «Actualizar» del listado, pero Chromium mostró el foco en `BODY`
+  porque el botón queda deshabilitado durante la recarga. Se corrigió
+  enfocando el encabezado `#records-title` con `tabindex="-1"`, que siempre
+  existe y es un destino lógico.
+- Archivos modificados:
+  - `app/frontend/src/app/features/records/confirm-delete-dialog/confirm-delete-dialog.html`
+  - `app/frontend/src/app/features/records/confirm-delete-dialog/confirm-delete-dialog.spec.ts`
+  - `app/frontend/src/app/features/records/records-page.ts`
+  - `app/frontend/src/app/features/records/records-page.html`
+  - `app/frontend/src/app/features/records/records-page.spec.ts`
+- Pruebas frontend posteriores: 14 archivos y 62 pruebas aprobadas.
+- Compilación frontend: exit 0 con la advertencia ya conocida de presupuesto
+  inicial (528.53 kB frente a aviso de 500 kB; por debajo del error de 1 MB).
+- No se repitieron las suites de backend porque no fueron afectadas.
+
+#### Revalidación 1 (navegador, Chromium headless)
+
+| Caso | Resultado | Evidencia/limitación |
+|---|---|---|
+| Foco inicial del diálogo en Cancelar | APROBADO | Verificado con Chromium tras la corrección |
+| Enter desde Cancelar | APROBADO | Cancela; sin DELETE |
+| Clic en Cancelar | APROBADO | Sin DELETE; retorno de foco al disparador |
+| Escape | APROBADO | Sin DELETE; retorno de foco |
+| Tab y Shift+Tab | APROBADO | Foco confinado en el diálogo |
+| Confirmar Eliminar | FALLÓ (foco posterior) | DELETE 1, 204 y listado actualizado; foco posterior en `BODY` |
+| Saltar al contenido | APROBADO | Destino `#main-content`, foco en el contenido y siguiente Tab lógico |
+| Listado desactualizado con BD detenida | APROBADO | Error visible, datos anteriores conservados y `stale` presente |
+| Recuperación de PostgreSQL | APROBADO | El estado desactualizado desaparece |
+| Consola | APROBADO | 0 errores inesperados; 0 `pageerror` |
+| Carga estática mínima | FALLÓ (prueba) | Codificación del `data:` URL; la aplicación cargó correctamente |
+
+#### Revalidación 2 (navegador, Chromium headless)
+
+| Caso | Resultado | Evidencia |
+|---|---|---|
+| Carga estática mínima | APROBADO | URL con `charset=utf-8` |
+| Carga de la aplicación Angular | APROBADO | — |
+| Regresión del foco inicial en Cancelar | APROBADO | — |
+| Eliminar confirmado, un DELETE 204 y listado actualizado | APROBADO | — |
+| Foco posterior en destino lógico | APROBADO | `H1#records-title` enfocado y conectado |
+| Consola y errores de página | APROBADO | 0 errores inesperados; 0 `pageerror` |
+
+- Evidencias:
+  - `docs/Evidencias/IMP-009/2026-11-07-revalidacion-1/`
+  - `docs/Evidencias/IMP-009/2026-11-07-revalidacion-2/`
+- Recursos temporales eliminados; imagen Playwright conservada por digest.
+- **IMP-009 COMPLETADA.** Los criterios pendientes de foco, cancelación,
+  Escape, retorno de foco, enlace de salto, datos desactualizados y consola
+  quedaron cubiertos.
+
 ## 4. Matriz funcional
 
 | ID | Prueba | Resultado esperado |

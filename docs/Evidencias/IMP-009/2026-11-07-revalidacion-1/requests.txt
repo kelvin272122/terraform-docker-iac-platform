@@ -1,0 +1,15 @@
+carga-app	GET	/api/info	200	1
+carga-app	GET	/api/health	200	1
+preparar	GET	/api/records	200	4
+preparar	POST	/api/records	201	2
+dialogo-cancelar-enter	GET	/api/records	200	1
+dialogo-cancelar-click	GET	/api/records	200	1
+dialogo-escape	GET	/api/records	200	1
+dialogo-tab	GET	/api/records	200	1
+dialogo-confirmar	GET	/api/records	200	2
+dialogo-confirmar	DELETE	/api/records/4e762c4a-568c-4cf9-9139-0c9fa6c7ce92	204	1
+skip-link	GET	/api/info	200	2
+skip-link	GET	/api/health	200	2
+stale-db-down	GET	/api/records	200	1
+stale-db-down	GET	/api/records	503	1
+stale-recuperacion	GET	/api/records	200	1

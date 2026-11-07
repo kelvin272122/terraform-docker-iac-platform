@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormBuilder,
@@ -83,6 +83,9 @@ export class RecordsPage {
   protected readonly deleteUnknown = signal(false);
   protected readonly deleteMessage = signal<string | null>(null);
   private readonly pendingRefresh = signal<'create' | 'delete' | null>(null);
+
+  @ViewChild('recordsTitle', { read: ElementRef })
+  private recordsTitle?: ElementRef<HTMLHeadingElement>;
 
   constructor() {
     this.refreshTrigger
@@ -196,7 +199,7 @@ export class RecordsPage {
         ConfirmDeleteDialog,
         {
           data: { title: record.title },
-          autoFocus: 'first-tabbable',
+          autoFocus: '.dialog-cancel',
           restoreFocus: true,
         },
       )
@@ -262,6 +265,7 @@ export class RecordsPage {
       this.applyDeleted(record.id);
       this.pendingRefresh.set('delete');
       this.refreshList();
+      this.focusAfterDelete();
       return;
     }
 
@@ -272,6 +276,7 @@ export class RecordsPage {
       this.applyDeleted(record.id);
       this.pendingRefresh.set('delete');
       this.refreshList();
+      this.focusAfterDelete();
       return;
     }
 
@@ -282,6 +287,10 @@ export class RecordsPage {
 
     this.deleteUnknown.set(true);
     this.deleteError.set(null);
+  }
+
+  private focusAfterDelete(): void {
+    this.recordsTitle?.nativeElement.focus();
   }
 
   private applyCreated(record: RecordItem): void {

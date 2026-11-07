@@ -1,0 +1,107 @@
+[
+  {
+    "phase": "carga-app",
+    "method": "GET",
+    "path": "/api/info",
+    "statusOrFailure": "200",
+    "count": 1
+  },
+  {
+    "phase": "carga-app",
+    "method": "GET",
+    "path": "/api/health",
+    "statusOrFailure": "200",
+    "count": 1
+  },
+  {
+    "phase": "preparar",
+    "method": "GET",
+    "path": "/api/records",
+    "statusOrFailure": "200",
+    "count": 4
+  },
+  {
+    "phase": "preparar",
+    "method": "POST",
+    "path": "/api/records",
+    "statusOrFailure": "201",
+    "count": 2
+  },
+  {
+    "phase": "dialogo-cancelar-enter",
+    "method": "GET",
+    "path": "/api/records",
+    "statusOrFailure": "200",
+    "count": 1
+  },
+  {
+    "phase": "dialogo-cancelar-click",
+    "method": "GET",
+    "path": "/api/records",
+    "statusOrFailure": "200",
+    "count": 1
+  },
+  {
+    "phase": "dialogo-escape",
+    "method": "GET",
+    "path": "/api/records",
+    "statusOrFailure": "200",
+    "count": 1
+  },
+  {
+    "phase": "dialogo-tab",
+    "method": "GET",
+    "path": "/api/records",
+    "statusOrFailure": "200",
+    "count": 1
+  },
+  {
+    "phase": "dialogo-confirmar",
+    "method": "GET",
+    "path": "/api/records",
+    "statusOrFailure": "200",
+    "count": 2
+  },
+  {
+    "phase": "dialogo-confirmar",
+    "method": "DELETE",
+    "path": "/api/records/4e762c4a-568c-4cf9-9139-0c9fa6c7ce92",
+    "statusOrFailure": "204",
+    "count": 1
+  },
+  {
+    "phase": "skip-link",
+    "method": "GET",
+    "path": "/api/info",
+    "statusOrFailure": "200",
+    "count": 2
+  },
+  {
+    "phase": "skip-link",
+    "method": "GET",
+    "path": "/api/health",
+    "statusOrFailure": "200",
+    "count": 2
+  },
+  {
+    "phase": "stale-db-down",
+    "method": "GET",
+    "path": "/api/records",
+    "statusOrFailure": "200",
+    "count": 1
+  },
+  {
+    "phase": "stale-db-down",
+    "method": "GET",
+    "path": "/api/records",
+    "statusOrFailure": "503",
+    "count": 1
+  },
+  {
+    "phase": "stale-recuperacion",
+    "method": "GET",
+    "path": "/api/records",
+    "statusOrFailure": "200",
+    "count": 1
+  }
+]

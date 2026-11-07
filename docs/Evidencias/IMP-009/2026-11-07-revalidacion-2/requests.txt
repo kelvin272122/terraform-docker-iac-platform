@@ -1,0 +1,5 @@
+GET	/api/info	200	1
+GET	/api/health	200	1
+GET	/api/records	200	5
+POST	/api/records	201	1
+DELETE	/api/records/2c8a7483-e6bd-459d-aa02-b35127368fbc	204	1

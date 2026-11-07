@@ -20,7 +20,7 @@
 | IMP-006 | Base de API Express y contrato inicial | Backend | COMPLETADA | 2026-11-05 |
 | IMP-007 | PostgreSQL, migraciones, pool y `/api/health` | Backend / Base de datos | COMPLETADA | 2026-11-07 |
 | IMP-008 | Operaciones HTTP de Registros | Backend / API | COMPLETADA | 2026-11-07 |
-| IMP-009 | Integración del frontend con la API real | Frontend / Integración | IMPLEMENTADA_PENDIENTE_VALIDACION | 2026-11-07 |
+| IMP-009 | Integración del frontend con la API real | Frontend / Integración | COMPLETADA | 2026-11-07 |
 
 ## Registro
 
@@ -802,7 +802,7 @@
 - Inicio: 2026-11-07
 - Última actualización: 2026-11-07
 - Área: Frontend / Integración
-- Estado: IMPLEMENTADA_PENDIENTE_VALIDACION
+- Estado: COMPLETADA
 - Requerimientos relacionados: RF-01 a RF-07 en su parte de interfaz;
   arquitectura §4 y §7; pruebas PF-01 a PF-24 (solo partes ejecutadas).
 
@@ -844,7 +844,8 @@
 #### Validaciones
 - Frontend: `npm ci` exit 0; `npm run build` exit 0 con advertencia de
   presupuesto inicial (528.53 kB frente a aviso de 500 kB, por debajo del error
-  de 1 MB); `npm test -- --watch=false` con 14 archivos y 60 pruebas.
+  de 1 MB); `npm test -- --watch=false` con 14 archivos y 60 pruebas; tras la corrección
+  de foco, 62 pruebas.
 - Backend: `npm ci`, build y typecheck exit 0; 116 pruebas unitarias.
 - Integración backend con PostgreSQL real y guard: 11 archivos y 130 pruebas.
 - Guard negativo con `TEST_DB_CONFIRM` incorrecto: la suite falló con el
@@ -875,14 +876,100 @@
 - No se marcaron pruebas del sistema completo como aprobadas.
 
 #### Pendientes o revisión
-- Validación manual en navegador de la integración actual.
+- Validación de navegador completada y corregida.
 - Completar pruebas del sistema completo cuando existan NGINX y Terraform.
 - Integración de roles y migraciones con Terraform.
 - NGINX, Dockerfiles y despliegue final.
 
-#### Próximo paso
-- Ejecutar la validación manual de IMP-009; después avanzar con NGINX,
-  Dockerfiles y Terraform, sin reabrir tareas completadas.
+#### Actualización — Validación de navegador bloqueada (2026-11-07)
+
+- Se detectó como única automatización de navegador del sistema
+  `WebKitWebDriver` 2.54.2 con Epiphany 50.6 (`--automation-mode`).
+- Se creó sesión WebDriver, pero la navegación quedó en `about:blank` incluso
+  con una página `data:` mínima. La sesión terminó inválida y Epiphany registró
+  un error de ventanas vivas tras el cierre. Se hicieron dos intentos y se
+  detuvieron; no se siguieron variando opciones gráficas ni nombres de
+  navegador.
+- No existen en el entorno Chromium, Chrome, Firefox, Playwright, Puppeteer,
+  Selenium ni una imagen Docker de navegador reutilizable.
+- Los procesos de automatización fallidos fueron cerrados y sus archivos
+  temporales eliminados. No se cerró ningún navegador del usuario.
+- Los contenedores de la aplicación de esta validación siguen en ejecución:
+  `iac-ui-web-1794081974`, `iac-ui-api-1794081974` y
+  `iac-ui-pg-1794081974`. Solo el web publica `127.0.0.1:4200`; API y
+  PostgreSQL no publican puertos. Las respuestas HTTP del proxy siguen siendo
+  200.
+- No se modificó código funcional, dependencias ni configuración del proyecto.
+- La validación visual, de teclado, foco y responsive sigue pendiente. Se
+  propone un contenedor temporal de Playwright con Chromium y se espera
+  aprobación antes de descargarlo o ejecutarlo.
+- IMP-009 permanece en IMPLEMENTADA_PENDIENTE_VALIDACION.
+
+#### Actualización — Validación Playwright (2026-11-07)
+
+- Imagen `mcr.microsoft.com/playwright:v1.65.0-noble` fijada por digest
+  `sha256:bc4fbb329a25287ed23e9216c97063646abdd1bf2da669a9895fa3e2078b2302`;
+  Playwright 1.65.0, Chromium 158.0.8127.18, Node 26.
+- Ejecución headless con `chromiumSandbox: false`: el intento con `true` falló
+  por incompatibilidad de sandbox en la prueba mínima. Excepción limitada al
+  contenedor temporal y a la aplicación local.
+- Chromium accedió a Angular mediante `MAP localhost 172.20.0.3`, sin cambiar
+  `allowedHosts`, sin red host, sin socket Docker y sin publicar puertos.
+- El host detuvo y reinició PostgreSQL y la API con comandos exactos; el
+  navegador no recibió credenciales ni socket Docker.
+- Resultados: 27 comprobaciones aprobadas y 5 fallidas/bloqueadas.
+  - Falló el foco inicial del diálogo: quedó en «Eliminar», no en «Cancelar».
+    El caso de cancelación se detuvo antes de comprobar el DELETE.
+  - El caso de Registros con BD detenida mostró error, pero no `stale` porque
+    la página se cargó sin datos previos; el mecanismo `stale` se aprobó en la
+    recarga fallida tras POST confirmado.
+  - El enlace «Saltar al contenido» no completó la comprobación posterior al
+    Enter: la navegación de hash destruyó el contexto. Tab y foco quedaron
+    parcialmente comprobados.
+  - El caso de diálogo con Escape y retorno quedó bloqueado por la navegación
+    de hash pendiente.
+  - La clasificación automática de consola marcó 5 errores de red de las
+    paradas deliberadas de BD/API; 0 `pageerror` y revisión manual sin error
+    inesperado.
+- Evidencias sanitizadas en
+  `docs/Evidencias/IMP-009/2026-11-07-browser/` (capturas y resultados).
+- No se modificó código funcional ni dependencias. No se corrigió la
+  incidencia de foco; queda pendiente de aprobación.
+- Contenedores, redes, volumen y credenciales temporales de la validación
+  fueron eliminados. La imagen Playwright se conserva (3.65 GB, digest
+  indicado) y se informa de ello.
+- IMP-009 permanece en IMPLEMENTADA_PENDIENTE_VALIDACION.
+
+#### Actualización — Corrección y revalidación del foco (2026-11-07)
+
+- Causa: el diálogo se abría con `autoFocus: 'first-tabbable'` y el foco
+  inicial quedaba en «Eliminar».
+- Corrección: clase estable `dialog-cancel` en «Cancelar» y
+  `autoFocus: '.dialog-cancel'` en la apertura del diálogo.
+- Foco posterior tras eliminar: el primer ajuste enfocó el botón «Actualizar»
+  del listado, pero Chromium mostró `BODY` porque el botón queda deshabilitado
+  durante la recarga. Se enfocó el encabezado `#records-title` con
+  `tabindex="-1"`, siempre existente.
+- Archivos: `confirm-delete-dialog.html`, `confirm-delete-dialog.spec.ts`,
+  `records-page.ts`, `records-page.html`, `records-page.spec.ts`.
+- Pruebas frontend: 14 archivos y 62 pruebas aprobadas.
+- Compilación frontend: exit 0 con la advertencia de presupuesto de 528.53 kB
+  (aviso de 500 kB; por debajo del error de 1 MB).
+- Revalidación Chromium 1: foco inicial en Cancelar, Enter, clic en Cancelar,
+  Escape, Tab/Shift+Tab, enlace «Saltar al contenido», listado desactualizado
+  con BD detenida, recuperación y consola: aprobados. La eliminación confirmada
+  produjo un DELETE 204 y actualizó el listado, pero el foco posterior quedó en
+  `BODY`.
+- Revalidación Chromium 2: carga estática, carga Angular, regresión de foco,
+  DELETE 204 y foco posterior en `H1#records-title`: aprobados; 0 errores de
+  consola y 0 `pageerror`.
+- Evidencias:
+  - `docs/Evidencias/IMP-009/2026-11-07-revalidacion-1/`
+  - `docs/Evidencias/IMP-009/2026-11-07-revalidacion-2/`
+- Recursos temporales de ambas revalidaciones eliminados. La imagen Playwright
+  se conserva por digest (3.65 GB).
+- No se crearon commits. IMP-003 permanece abierta.
+- Estado final: **IMP-009 COMPLETADA**.
 
 <!--
 Plantilla para cada implementación:

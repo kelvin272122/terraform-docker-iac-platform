@@ -26,9 +26,11 @@ describe('ConfirmDeleteDialog', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('Prueba');
 
-    element
-      .querySelector<HTMLButtonElement>('button')
-      ?.click();
+    const buttons = element.querySelectorAll<HTMLButtonElement>('button');
+    expect(buttons[0]?.textContent?.trim()).toBe('Cancelar');
+    expect(buttons[0]?.classList.contains('dialog-cancel')).toBe(true);
+
+    buttons[0]?.click();
 
     expect(close).toHaveBeenCalledWith(false);
   });

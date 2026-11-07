@@ -14,9 +14,11 @@ Frontend Angular 21 del Panel de verificación IaC, integrado con la API real.
 - Sin datos simulados, sin sondeo periódico y sin reintentos automáticos de
   mutaciones.
 - Versión de interfaz generada desde `package.json` durante la compilación.
-- Pruebas: 14 archivos y 60 pruebas aprobadas.
-- Validación visual, de teclado, foco y responsive de esta integración:
-  pendiente en navegador real.
+- Pruebas: 14 archivos y 62 pruebas aprobadas.
+- Validación de navegador completada con Playwright 1.65.0 y Chromium 158
+  headless: foco del diálogo, cancelación, Escape, Tab/Shift+Tab, enlace de
+  salto, listado desactualizado, recuperación y consola. Evidencias en
+  `docs/Evidencias/IMP-009/`.
 
 ## Versión de interfaz
 

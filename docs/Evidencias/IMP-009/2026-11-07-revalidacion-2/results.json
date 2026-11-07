@@ -1,0 +1,96 @@
+{
+  "generatedAt": "2026-11-07T20:57:54.543Z",
+  "sandbox": false,
+  "results": [
+    {
+      "case": "Carga estática mínima",
+      "method": "navegador",
+      "backend": "n/a",
+      "result": "APROBADO",
+      "evidence": "smoke",
+      "limitation": ""
+    },
+    {
+      "case": "Carga de la aplicación Angular",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Preparar registro real",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    },
+    {
+      "case": "Regresión: foco inicial del diálogo en Cancelar",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "dialogo-foco-regresion.png",
+      "limitation": ""
+    },
+    {
+      "case": "Foco posterior verificado",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": "{\"tag\":\"H1\",\"id\":\"records-title\",\"text\":\"Registros\",\"aria\":\"\",\"withinDialog\":false,\"connected\":true}"
+    },
+    {
+      "case": "Eliminar confirmado y foco posterior en destino lógico",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "registros-foco-posterior.png",
+      "limitation": ""
+    },
+    {
+      "case": "Consola y errores de página",
+      "method": "navegador",
+      "backend": "real",
+      "result": "APROBADO",
+      "evidence": "",
+      "limitation": ""
+    }
+  ],
+  "consoleEntries": [],
+  "pageErrors": [],
+  "requestSummary": [
+    {
+      "method": "GET",
+      "path": "/api/info",
+      "statusOrFailure": "200",
+      "count": 1
+    },
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "statusOrFailure": "200",
+      "count": 1
+    },
+    {
+      "method": "GET",
+      "path": "/api/records",
+      "statusOrFailure": "200",
+      "count": 5
+    },
+    {
+      "method": "POST",
+      "path": "/api/records",
+      "statusOrFailure": "201",
+      "count": 1
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/records/2c8a7483-e6bd-459d-aa02-b35127368fbc",
+      "statusOrFailure": "204",
+      "count": 1
+    }
+  ]
+}
