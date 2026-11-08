@@ -1,0 +1,9 @@
+==> Smoke test de prod en http://127.0.0.1:8081
+ OK GET / responde 200 con la interfaz
+ OK GET /api/info responde 200 con environment=prod
+ OK GET /api/health responde 200 con database=up
+ OK POST /api/records crea el registro (201)
+ OK GET /api/records lista el registro creado
+ OK DELETE /api/records/:id responde 204
+ OK El registro ya no aparece en el listado
+==> Smoke test de prod aprobado

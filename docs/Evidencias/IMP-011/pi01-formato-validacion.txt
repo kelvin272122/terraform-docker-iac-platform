@@ -1,0 +1,10 @@
+# PI-01 Formato y validación (2026-11-08T14:56:54-04:00)
+Terraform v1.17.0
+terraform fmt -check: sin cambios
+Success! The configuration is valid.
+
+bash -n OK: infra/scripts/build-images.sh
+bash -n OK: infra/scripts/deploy.sh
+bash -n OK: infra/scripts/destroy.sh
+bash -n OK: infra/scripts/lib.sh
+bash -n OK: infra/scripts/smoke-test.sh

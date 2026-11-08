@@ -1,0 +1,17 @@
+# PI-16 privilegios del rol de aplicación (2026-11-08T14:40:57-04:00)
+-- SELECT count(*) FROM records
+1
+-- INSERT INTO records(id,title) VALUES (gen_random_uuid(),'pi16') RETURNING title
+pi16
+INSERT 0 1
+-- DELETE FROM records WHERE title='pi16'
+DELETE 1
+-- UPDATE records SET title='x'
+ERROR:  permission denied for table records
+-- TRUNCATE records
+ERROR:  permission denied for table records
+-- CREATE TABLE pi16(x int)
+ERROR:  permission denied for schema public
+LINE 1: CREATE TABLE pi16(x int)
+-- DROP TABLE records
+ERROR:  must be owner of table records

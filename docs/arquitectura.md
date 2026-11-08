@@ -26,13 +26,16 @@ Por entorno:
 - PostgreSQL no se conecta a frontend_net.
 
 Puertos:
-- NGINX: 80 interno.
+- NGINX: 8080 interno (imagen `nginx-unprivileged`, usuario 101).
 - API: 3000 interno.
 - PostgreSQL: 5432 interno.
 - dev: 127.0.0.1:8080.
 - prod: 127.0.0.1:8081.
 
 Los contenedores se comunican por nombres o alias de red, no por localhost.
+NGINX alcanza la API por el alias `api` en frontend_net; la API alcanza
+PostgreSQL por el nombre de su contenedor (`iac-panel-{entorno}-postgres`),
+que también tiene el alias `postgres` en backend_net.
 
 ## 4. Frontend
 
@@ -355,6 +358,21 @@ app:
 Usar referencias para dependencias implícitas.
 depends_on solo cuando no exista una referencia que exprese la dependencia.
 No introducir metaargumentos sin necesidad funcional.
+
+Implementación (IMP-011, verificada el 2026-11-08):
+- Guarda de workspace: `terraform_data.workspace_guard` con una precondición
+  `terraform.workspace == var.environment`; bloquea `default` y combinaciones
+  cruzadas.
+- La dependencia API -> PostgreSQL se expresa con `DB_HOST` = nombre del
+  contenedor de PostgreSQL (referencia), sin `depends_on`.
+- `lifecycle.ignore_changes = [ipv6]` en las redes, porque IPv6 depende del
+  daemon (Docker Desktop lo activa por defecto) y el provider no puede
+  forzarlo a `false`. Es el único metaargumento añadido.
+- `memory_swap` igual a `memory` en todos los contenedores para evitar deriva
+  y swap.
+- El rol de aplicación lo crea un script de `/docker-entrypoint-initdb.d/` y
+  `deploy.sh` lo reconcilia de forma idempotente.
+- Detalle operativo en [despliegue.md](despliegue.md).
 
 ## 10. Límites
 

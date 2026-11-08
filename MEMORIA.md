@@ -1,8 +1,11 @@
 # Memoria del proyecto
 
 ## Estado actual
-- Fase: frontend, backend, PostgreSQL, Dockerfiles, imágenes y NGINX
-  implementados y verificados; Terraform y Compose pendientes.
+- Fase: frontend, backend, PostgreSQL, Dockerfiles, imágenes, NGINX y
+  Terraform implementados. Terraform y scripts verificados en Windows con
+  Docker Desktop (IMP-011): PI-01 a PI-17 aprobadas; PI-18 y PI-19
+  pendientes.
+- Rama de trabajo de IMP-011: `feat/terraform-infra`.
 - `app/frontend/` contiene un workspace Angular 21 con standalone, routing,
   SCSS, TypeScript estricto, modo zoneless y sin SSR.
 - Angular Material y CDK `21.2.14` instalados; shell con navegación lateral,
@@ -14,9 +17,9 @@
   `GET/POST/DELETE /api/records`, pool PostgreSQL, configuración `DB_*`,
   migraciones SQL, 404 JSON, límite JSON de 16 KiB, errores seguros y cierre
   ante SIGTERM.
-- Validación visual, teclado, foco y responsive de la integración actual:
-  pendiente en navegador real. NGINX, Dockerfiles y Terraform siguen
-  pendientes.
+- Despliegue: `infra/scripts/build-images.sh VERSION`, `deploy.sh ENTORNO
+  VERSION`, `smoke-test.sh ENTORNO` y `destroy.sh ENTORNO`; dev en
+  `127.0.0.1:8080` y prod en `127.0.0.1:8081`.
 - `package-lock.json` del frontend regenerado con Material/CDK; `AGENTS.md`
   intacto.
 - Pruebas frontend: 14 archivos y 62 pruebas aprobadas.
@@ -80,6 +83,8 @@
 - IMP-008: operaciones HTTP de Registros. COMPLETADA.
 - IMP-009: integración del frontend con la API real. COMPLETADA.
 - IMP-010: Dockerfiles, imágenes y NGINX. COMPLETADA.
+- IMP-011: Terraform y scripts de despliegue.
+  IMPLEMENTADA_PENDIENTE_VALIDACION (faltan PI-18 y PI-19).
 
 ## Pendientes y advertencias
 - Validación de navegador completada con Playwright 1.65.0/Chromium 158:
@@ -87,8 +92,12 @@
   «Saltar al contenido», listado desactualizado con BD detenida, recuperación y
   consola aprobados. La eliminación confirmada produce un DELETE 204 y el foco
   posterior queda en el encabezado `#records-title`.
-- Pruebas del sistema completo, Terraform, Compose y scripts de despliegue:
-  pendientes.
+- Pruebas de infraestructura pendientes: PI-18 (sin internet) y PI-19
+  (nueva versión de imagen). Scripts no probados todavía en Linux.
+- Compose no se implementa: `infra/AGENTS.md` prohíbe sustituir Terraform.
+- Windows: `core.autocrlf=true` convierte a CRLF; `.gitattributes` fuerza LF
+  en scripts, Terraform y SQL. `terraform output <nombre>` revela valores
+  sensibles: no usarlo en evidencias.
 - El target `development` del frontend queda pendiente por decisión de alcance.
 - Deuda de seguridad de herramientas de migración del backend: 3 alertas
   moderadas (`node-pg-migrate`, `glob@13.0.7` y `minimatch@10.2.6`). El runtime
@@ -122,15 +131,16 @@
   antes de una entrega o despliegue; verificar versiones transitivas y repetir
   auditoría, compilación y pruebas.
 - Respuesta temporal de `/api` sin backend: decisión unificada como 404 JSON
-  `API_NOT_CONFIGURED`; la implementación NGINX sigue pendiente.
+  `API_NOT_CONFIGURED`; documentada como modo separado, no implementada en la
+  imagen final.
 - No ejecutar despliegues, migraciones sobre datos existentes ni destrucciones
   sin la autorización correspondiente.
 
 ## Siguiente paso
-1. Planificar e implementar Terraform y los scripts de despliegue.
-2. Añadir Compose si se aprueba.
-3. Completar las pruebas del sistema completo.
+1. Ejecutar PI-19 (versión 0.1.1) y PI-18 (sin conexión).
+2. Probar los scripts en Linux.
+3. Redactar el informe académico, el guion de la defensa y los diagramas.
 
 ## Última actualización
-- Fecha: 2026-11-07.
-- Implementación relacionada: IMP-010 (Dockerfiles, imágenes y NGINX).
+- Fecha: 2026-11-08.
+- Implementación relacionada: IMP-011 (Terraform y scripts de despliegue).

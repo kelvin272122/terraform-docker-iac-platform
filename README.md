@@ -2,9 +2,9 @@
 
 La meta del proyecto es una plataforma web local completa de tres capas
 (Angular, API Express y PostgreSQL), con NGINX como servidor web y reverse
-proxy, desplegada con Terraform y Docker. Esa plataforma completa sigue
-siendo el objetivo pendiente; el frontend ya está integrado con la API y
-PostgreSQL, y faltan NGINX, Dockerfiles y Terraform.
+proxy, desplegada con Terraform y Docker. La plataforma completa ya se
+despliega con Terraform en dos entornos locales (dev y prod); ver
+[Despliegue con Terraform](#despliegue-con-terraform).
 El alcance, la arquitectura y el despliegue detallados están en `docs/`.
 
 ## Estado actual
@@ -29,7 +29,11 @@ El alcance, la arquitectura y el despliegue detallados están en `docs/`.
 - Backend con `/api/info`, `/api/health` y `/api/records`, pool PostgreSQL,
   configuración `DB_*` y migraciones versionadas implementados y validados con
   PostgreSQL 17 real. Dockerfiles, imágenes y NGINX implementados y
-  verificados; Terraform pendiente.
+  verificados.
+- Terraform (módulos network, database y app), workspaces dev/prod y scripts
+  de construcción, despliegue, smoke test y destrucción implementados y
+  verificados en Windows con Docker Desktop (IMP-011). Pruebas PI-01 a PI-17
+  aprobadas; PI-18 (sin internet) y PI-19 (nueva versión) pendientes.
 - `/api/info` sigue disponible y `/api/health` responde 503 cuando PostgreSQL
   no está accesible.
 - La imagen NGINX final proxifica `/api` y `/api/` hacia `api:3000`. El modo
@@ -53,7 +57,9 @@ sustituye la auditoría completa.
 
 - Docker Engine o Docker Desktop operativo y acceso autorizado al daemon.
 - Soporte de cgroups v2 para aplicar límites de CPU, memoria y PIDs.
-- Bash y utilidades de un entorno Linux o equivalente.
+- Bash y utilidades de un entorno Linux o equivalente (en Windows, Git Bash).
+- Terraform >= 1.9 y `curl` para el despliegue con Terraform.
+- Puertos TCP 8080 (dev) y 8081 (prod) libres en `127.0.0.1`.
 - Acceso a internet para descargar la imagen y las dependencias
   cuando no estén disponibles localmente.
 - No se requiere Node.js, npm ni Angular CLI instalados en el host.
@@ -256,6 +262,43 @@ alias `api:3000`, resolución dinámica de Docker, conserva el prefijo y la quer
 string, no cachea API y devuelve JSON para fallos de upstream. Las evidencias
 están en `docs/Evidencias/IMP-010/`.
 
+## Despliegue con Terraform
+
+Prerrequisitos: Docker Engine o Docker Desktop en marcha, Terraform >= 1.9,
+Bash (en Windows, Git Bash) y `curl`. Todos los comandos se ejecutan desde la
+raíz del repositorio. Verificado en Windows 11 con Docker Desktop 29.6.2 y
+Terraform 1.17.0.
+
+```bash
+# 1. Construir las imágenes (etapa previa y separada de Terraform)
+bash infra/scripts/build-images.sh 0.1.0
+
+# 2. Desplegar un entorno: plan, confirmación ("si"), apply, migración y salud
+bash infra/scripts/deploy.sh dev 0.1.0     # http://127.0.0.1:8080
+bash infra/scripts/deploy.sh prod 0.1.0    # http://127.0.0.1:8081
+
+# 3. Comprobar info, salud y el ciclo crear/listar/eliminar
+bash infra/scripts/smoke-test.sh dev
+
+# 4. Destruir un entorno (pide escribir su nombre; borra su volumen y datos)
+bash infra/scripts/destroy.sh dev
+```
+
+- Solo NGINX publica un puerto, en `127.0.0.1`. La API y PostgreSQL no
+  publican puertos; la red backend es interna.
+- Cada entorno tiene su workspace, su estado local, sus redes, su volumen y
+  sus contraseñas (`random_password`). El plan se bloquea si el workspace no
+  coincide con el entorno.
+- `deploy.sh` no usa `-auto-approve`: muestra el plan y pide confirmación.
+- El estado (`infra/terraform.tfstate.d/`) contiene secretos en texto plano y
+  no se versiona.
+- La versión de `package.json` debe coincidir con la etiqueta que se
+  construye.
+
+El detalle de módulos, variables y operación está en
+[docs/despliegue.md](docs/despliegue.md); los resultados y evidencias, en
+[docs/pruebas.md](docs/pruebas.md) y `docs/Evidencias/IMP-011/`.
+
 ## Estructura
 
 - `app/frontend/`: aplicación Angular.
@@ -263,7 +306,7 @@ están en `docs/Evidencias/IMP-010/`.
 - `app/database/`: migraciones SQL y script administrativo de privilegios.
 - `app/nginx/`: configuración de NGINX y proxy de API.
 - `docs/`: requerimientos, arquitectura, despliegue y pruebas.
-- `infra/`: Terraform (pendiente).
+- `infra/`: Terraform (módulos, entornos) y scripts de despliegue.
 
 ## Documentación
 

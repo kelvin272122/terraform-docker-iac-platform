@@ -394,6 +394,27 @@ Los comandos deben implementarse y comprobarse antes de declararlos operativos.
   - El aviso de presupuesto Angular de 528.53 kB se mantiene sin cambios.
 - Evidencias: `docs/Evidencias/IMP-010/`.
 
+### Validación de Terraform y scripts de despliegue (IMP-011) — 2026-11-08
+
+- Entorno: Windows 11 Pro, Git Bash, Docker Desktop 29.6.2 (VM de 12 CPU y
+  ~3.9 GB), Terraform 1.17.0, `kreuzwerker/docker` 4.6.0 y
+  `hashicorp/random` 3.9.1. Imágenes 0.1.0 construidas con
+  `infra/scripts/build-images.sh 0.1.0`.
+- Estáticas: `terraform fmt -check -recursive`, `terraform validate` y
+  `bash -n` de los cinco scripts, sin errores.
+- Desplegadas: dev (`127.0.0.1:8080`) y prod (`127.0.0.1:8081`) en paralelo;
+  `smoke-test.sh` aprobado en ambos (7/7 comprobaciones).
+- Resultados por prueba en la sección 5; detalle y salidas sanitizadas en
+  `docs/Evidencias/IMP-011/`, con capturas de navegador de dev y prod.
+- Incidencias corregidas durante la validación: rutas de Git Bash, deriva por
+  `memory_swap` e IPv6, recreaciones causadas por `depends_on`, `instanceId`
+  fijo, CRLF en el script de inicialización (falló el primer despliegue de
+  prod; se completó sin borrar datos) y un valor sensible impreso en una
+  evidencia (eliminado; dev recreado con contraseñas nuevas). Ver
+  `docs/Evidencias/IMP-011/resumen.md`.
+- No ejecutadas: PI-18 (defensa sin internet) y PI-19 (nueva versión de
+  imagen).
+
 ## 4. Matriz funcional
 
 | ID | Prueba | Resultado esperado |
@@ -439,27 +460,27 @@ Los comandos deben implementarse y comprobarse antes de declararlos operativos.
 
 ## 5. Matriz de infraestructura
 
-| ID | Prueba | Resultado esperado |
-|---|---|---|
-| PI-01 | Formato y validación | Sin errores |
-| PI-02 | Despliegue desde prerrequisitos | Recursos y aplicación operativos |
-| PI-03 | Reaplicar migraciones | Sin duplicación ni pérdida |
-| PI-04 | Plan posterior estable | Sin cambios inesperados |
-| PI-05 | Recrear API | Servicio vuelve; datos conservados |
-| PI-06 | Recrear BD manteniendo volumen | Registro testigo conservado |
-| PI-07 | Inspeccionar puertos | Solo NGINX publicado en loopback |
-| PI-08 | Inspeccionar redes | Membresías acordadas y BD aislada de frontend_net |
-| PI-09 | Ejecutar dev y prod | Puertos, recursos y datos separados |
-| PI-10 | Variables/workspace discordantes | Despliegue bloqueado |
-| PI-11 | Cambiar puerto de prueba | Plan muestra efecto y app accesible |
-| PI-12 | Eliminar API manualmente | Plan detecta recurso ausente |
-| PI-13 | Aplicar recuperación | API recreada y salud correcta |
-| PI-14 | Destruir dev | Recursos dev eliminados y prod intacto |
-| PI-15 | Recrear tras destrucción total | Base vacía y esquema reconstruido |
-| PI-16 | Privilegios API | SELECT/INSERT/DELETE permitidos; UPDATE y DDL denegados |
-| PI-17 | Revisar secretos | Sin secretos en Git, UI ni evidencias |
-| PI-18 | Defensa desconectada | Operaciones previstas sin descargas nuevas |
-| PI-19 | Nueva versión de imagen | Contenedor usa build nuevo y versión correcta |
+| ID | Prueba | Resultado esperado | Estado (2026-11-08) | Resultado obtenido |
+|---|---|---|---|---|
+| PI-01 | Formato y validación | Sin errores | APROBADA | fmt, validate y `bash -n` sin errores |
+| PI-02 | Despliegue desde prerrequisitos | Recursos y aplicación operativos | APROBADA | 9 recursos, migración, grants y salud 200 |
+| PI-03 | Reaplicar migraciones | Sin duplicación ni pérdida | APROBADA | `No migrations to run!`; testigo conservado |
+| PI-04 | Plan posterior estable | Sin cambios inesperados | APROBADA | `No changes` en dev y prod (exit 0) |
+| PI-05 | Recrear API | Servicio vuelve; datos conservados | APROBADA | `instanceId` cambió; testigo presente |
+| PI-06 | Recrear BD manteniendo volumen | Registro testigo conservado | APROBADA | Solo se recreó PostgreSQL; testigo presente |
+| PI-07 | Inspeccionar puertos | Solo NGINX publicado en loopback | APROBADA | 8080 y 8081 en 127.0.0.1; 3000 y 5432 inaccesibles |
+| PI-08 | Inspeccionar redes | Membresías acordadas y BD aislada de frontend_net | APROBADA | backend interna, sin salida a internet |
+| PI-09 | Ejecutar dev y prod | Puertos, recursos y datos separados | APROBADA | Datos, volúmenes, estados y contraseñas distintos |
+| PI-10 | Variables/workspace discordantes | Despliegue bloqueado | APROBADA | Precondición falla en `default` y con prod.tfvars en dev |
+| PI-11 | Cambiar puerto de prueba | Plan muestra efecto y app accesible | APROBADA | 8080 -> 8090 visible en el plan; 200 en 8090; restaurado |
+| PI-12 | Eliminar API manualmente | Plan detecta recurso ausente | APROBADA | 504 JSON de NGINX; plan exit 2 con la API a crear |
+| PI-13 | Aplicar recuperación | API recreada y salud correcta | APROBADA | Salud 200 y plan posterior estable |
+| PI-14 | Destruir dev | Recursos dev eliminados y prod intacto | APROBADA | Confirmación errónea cancela; dev 0 recursos; prod intacto |
+| PI-15 | Recrear tras destrucción total | Base vacía y esquema reconstruido | APROBADA | 0 registros; `records` y `pgmigrations` recreadas |
+| PI-16 | Privilegios API | SELECT/INSERT/DELETE permitidos; UPDATE y DDL denegados | APROBADA | UPDATE, TRUNCATE, CREATE y DROP denegados |
+| PI-17 | Revisar secretos | Sin secretos en Git, UI ni evidencias | APROBADA | 0 coincidencias tras corregir una evidencia |
+| PI-18 | Defensa desconectada | Operaciones previstas sin descargas nuevas | NO EJECUTADA | Pendiente |
+| PI-19 | Nueva versión de imagen | Contenedor usa build nuevo y versión correcta | NO EJECUTADA | Pendiente |
 
 Las pruebas destructivas se ejecutan únicamente en dev.
 Guardar el registro testigo antes de las pruebas de persistencia.

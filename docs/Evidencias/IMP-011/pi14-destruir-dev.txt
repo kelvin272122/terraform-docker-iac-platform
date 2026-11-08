@@ -1,0 +1,18 @@
+# PI-14 Destruir dev con prod intacto (2026-11-08T14:52:39-04:00)
+-- Confirmación incorrecta (debe cancelar):
+                psql -v ON_ERROR_STOP=1 \
+Plan: 0 to add, 0 to change, 9 to destroy.
+ !! Se eliminarán los contenedores, las redes y el volumen iac-panel-dev-pgdata.
+ !! TODOS LOS DATOS de dev se perderán de forma permanente.
+ERROR Operación cancelada.
+contenedores dev tras cancelar: 3
+-- Confirmación correcta:
+                psql -v ON_ERROR_STOP=1 \
+Plan: 0 to add, 0 to change, 9 to destroy.
+ !! Se eliminarán los contenedores, las redes y el volumen iac-panel-dev-pgdata.
+ !! TODOS LOS DATOS de dev se perderán de forma permanente.
+==> Entorno dev destruido. Las imágenes compartidas se conservan.
+recursos dev restantes: contenedores=0 redes=0 volúmenes=0
+prod: iac-panel-prod-api=Up About a minute (healthy) iac-panel-prod-postgres=Up 3 minutes (healthy) iac-panel-prod-web=Up 8 minutes (healthy) 
+prod registros: "title":"Solo en prod"
+imágenes conservadas: iac-panel-api-migrate iac-panel-api iac-panel-web 
