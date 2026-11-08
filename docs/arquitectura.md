@@ -277,11 +277,21 @@ Códigos:
 - PAYLOAD_TOO_LARGE: 413 cuando el cuerpo JSON supera 16 KiB.
 - DATABASE_UNAVAILABLE: 503.
 - INTERNAL_ERROR: 500.
+- UPSTREAM_UNAVAILABLE: 502 generado por NGINX cuando la API configurada no
+  está disponible.
+- UPSTREAM_TIMEOUT: 504 generado por NGINX cuando la API configurada no
+  responde.
+- PAYLOAD_TOO_LARGE: 413 también puede generarlo NGINX si se supera el límite
+  de transporte; mantiene el mismo sobre JSON.
 
 Un JSON malformado se responde como 400 `VALIDATION_ERROR` con un mensaje
 seguro. No se exponen stack traces ni detalles internos.
 
 Las rutas /api desconocidas devuelven 404 JSON.
+
+NGINX no devuelve `API_NOT_CONFIGURED` cuando la API está configurada pero
+caída: devuelve 502/504 JSON de upstream. El modo sin backend es una
+configuración separada.
 
 Mapeo de errores de base de datos:
 - 503 `DATABASE_UNAVAILABLE`: códigos de conexión de Node (`ECONNREFUSED`,
@@ -377,3 +387,8 @@ Cuando se integre Express:
 - Se reemplaza esta respuesta temporal por el reverse proxy aprobado.
 - Se mantiene el contrato API documentado.
 - Se actualizan las instrucciones de ejecución y las pruebas afectadas.
+
+La imagen final implementada ya usa el proxy `/api` y `/api/` hacia
+`api:3000`, con resolución dinámica por el DNS de Docker. El modo sin backend
+se conserva como configuración documental separada y no se mezcla con el modo
+con backend configurado.

@@ -2,8 +2,9 @@
 
 ## 1. Estado
 
-Procedimiento objetivo pendiente de implementación y verificación.
-Los scripts mencionados deben crearse; este documento no afirma su existencia.
+Los Dockerfiles, las imágenes y la configuración NGINX están implementados y
+verificados. Terraform y los scripts de despliegue/automatización siguen
+pendientes.
 
 ## 2. Prerrequisitos
 
@@ -35,56 +36,86 @@ No prometer un mínimo de hardware sin medirlo.
 - Restricción de versión Terraform.
 - Restricciones de providers y .terraform.lock.hcl versionado.
 - Imágenes base fijadas por etiqueta y digest verificado.
+- Node: `node:24.13.1-bookworm-slim@sha256:a81a03dd965b4052269a57fac857004022b522a4bf06e7a739e25e18bce45af2`.
+- NGINX: `nginx/nginx-unprivileged:1.30.6-alpine3.24-slim@sha256:016193c18ef1ce19dc2229d3305f69af1b05e0bc0e8fe6ee724a58bd305f3855`.
+- PostgreSQL: `postgres:17.11-bookworm@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994`.
 - No usar latest.
 - No actualizar dependencias durante la defensa.
 
 ## 4. Imágenes
 
-Construcción previa a Terraform.
-
-API:
-- Build multietapa.
-- Compilar TypeScript.
-- Incorporar dependencias runtime.
-- Incorporar migraciones; la herramienta de migración puede incluirse para la
-  operación administrativa, pero el proceso runtime no la requiere.
-- Ejecutar API como usuario no root.
+Construcción previa a Terraform. Los Dockerfiles y las imágenes están
+implementados y verificados; los scripts de infraestructura siguen pendientes.
 
 Frontend:
-- Inicializar Angular mediante un contenedor temporal de Node.js,
-  conservando el código en app/frontend/.
-- Mantener Angular 21 en modo zoneless.
-- Dockerfile en app/frontend/Dockerfile, con etapas development,
-  build y runtime.
+- Dockerfile: `app/frontend/Dockerfile`.
 - Contexto de build: raíz del repositorio.
-- .dockerignore en la raíz para controlar ese contexto.
-- Compilar Angular.
-- Copiar resultado a imagen NGINX.
-- Incorporar configuración de app/nginx/default.conf.
-- Incluir logo y recursos locales.
+- `.dockerignore` en la raíz.
+- Targets: `build` y `runtime`. La etapa `development` queda pendiente y no se
+  añadió en esta tarea.
+- `npm ci`, generación de versión mediante los scripts existentes y
+  `npm run build`.
+- Copia de `dist/iac-panel-frontend/browser/` a NGINX.
+- Runtime: `nginx/nginx-unprivileged:1.30.6-alpine3.24-slim@sha256:016193c18ef1ce19dc2229d3305f69af1b05e0bc0e8fe6ee724a58bd305f3855`.
+- Usuario 101, puerto interno 8080, `SIGQUIT` y temporales en `/tmp`.
+- Sin Node, npm, `node_modules` ni código fuente en la imagen final.
+- Configuración: `app/nginx/default.conf` y `app/nginx/api-proxy.conf`.
 
-Etapa inicial sin backend:
-- No configurar proxy /api ni activar simulación.
-- NGINX devuelve HTTP 404 con JSON para /api y /api/*, indicando que la API
-  todavía no está configurada:
-  `{"error":{"code":"API_NOT_CONFIGURED","message":"La API aún no está configurada."}}`.
-- Esas rutas no deben devolver el HTML de Angular mediante el fallback SPA.
-- Al integrar el backend, sustituir esta respuesta temporal por el proxy
-  definido en la arquitectura final.
+API:
+- Dockerfile: `app/backend/Dockerfile`.
+- Contexto de build: raíz del repositorio.
+- Targets: `build`, `prod-deps`, `runtime` y `migration`.
+- Runtime basado en Node 24.13.1, usuario `node`, `SIGTERM` y
+  `CMD ["node","dist/server.js"]`.
+- `npm ci --omit=dev` para el runtime; solo `express` y `pg`.
+- `node-pg-migrate`, TypeScript, Vitest y Supertest quedan fuera del runtime.
+- El npm global de la imagen base se conserva.
+- El target `migration` incluye `node-pg-migrate` y las migraciones SQL; no se
+  usa como runtime.
+- Las migraciones no se ejecutan al arrancar la API ni desde HTTP.
+
+NGINX:
+- Resolver Docker `127.0.0.11 valid=10s ipv6=off`.
+- Proxy de `/api` y `/api/` hacia `api:3000`, conservando prefijo y query
+  string.
+- `/api-docs` devuelve 404 y no se proxifica.
+- Fallback SPA solo para rutas de interfaz.
+- `UPSTREAM_UNAVAILABLE` como 502 JSON y `UPSTREAM_TIMEOUT` como 504 JSON.
+- `PAYLOAD_TOO_LARGE` como 413 JSON cuando NGINX rechaza por transporte.
+- `Cache-Control: no-store` en respuestas de API y errores JSON generados por
+  NGINX.
+- `client_max_body_size 1m`; Express mantiene el límite funcional de 16 KiB.
+- Sin caché de respuestas API, sin TLS, sin CORS abierto y sin dominio público.
+- La imagen final es el modo con backend configurado. `API_NOT_CONFIGURED`
+  queda como modo documental separado sin proxy y no se devuelve cuando una API
+  configurada está caída.
 
 PostgreSQL:
 - Imagen oficial de la línea 17.
 - Etiqueta verificada: `postgres:17.11-bookworm` con digest
   `sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994`.
-- Volumen en /var/lib/postgresql/data.
+- Volumen en `/var/lib/postgresql/data`.
 
 Etiquetas de aplicación:
-- iac-panel-api:{version}.
-- iac-panel-web:{version}.
+- `iac-panel-api:0.1.0`.
+- `iac-panel-web:0.1.0`.
+- `iac-panel-api-migrate:0.1.0`.
+- Dev y prod pueden reutilizar la misma imagen si comparten versión; la
+  configuración de ejecución se define en el despliegue.
 - Usar un identificador único por build.
 - No reconstruir contenido distinto bajo la misma etiqueta.
 - Versión embebida coincide con etiqueta.
-- Estado dev/prod usan la versión indicada en sus tfvars.
+
+Comandos de construcción verificados:
+
+```bash
+docker build --platform linux/amd64 -f app/frontend/Dockerfile --target runtime -t iac-panel-web:0.1.0 .
+docker build --platform linux/amd64 -f app/backend/Dockerfile --target runtime -t iac-panel-api:0.1.0 .
+docker build --platform linux/amd64 -f app/backend/Dockerfile --target migration -t iac-panel-api-migrate:0.1.0 .
+```
+
+La etapa inicial sin backend y su respuesta `API_NOT_CONFIGURED` se conservan
+como decisión documental separada; no forman parte de esta imagen final.
 
 Terraform no administra la construcción de estas imágenes.
 Destruir un entorno no elimina automáticamente las imágenes compartidas.

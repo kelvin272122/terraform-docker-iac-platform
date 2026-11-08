@@ -350,6 +350,50 @@ Los comandos deben implementarse y comprobarse antes de declararlos operativos.
   Escape, retorno de foco, enlace de salto, datos desactualizados y consola
   quedaron cubiertos.
 
+### Validación de imágenes, Dockerfiles y NGINX (IMP-010) — 2026-11-07
+
+- Bases verificadas:
+  - `node:24.13.1-bookworm-slim@sha256:a81a03dd965b4052269a57fac857004022b522a4bf06e7a739e25e18bce45af2`.
+  - `nginx/nginx-unprivileged:1.30.6-alpine3.24-slim@sha256:016193c18ef1ce19dc2229d3305f69af1b05e0bc0e8fe6ee724a58bd305f3855`.
+  - `postgres:17.11-bookworm@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994`.
+- Imágenes construidas:
+  - `iac-panel-web:0.1.0` — `sha256:45994eab833cd14f26f910a78bb35e72a204127e0537d780f02c1e64467e851c` — 22.2 MB.
+  - `iac-panel-api:0.1.0` — `sha256:33d2f1d57344599d2303393b440598257085b667e3b8bdc78e6b0550a12ae7a3` — 325 MB.
+  - `iac-panel-api-migrate:0.1.0` — `sha256:2dcea5fc7c988d9f9f7a816016b6ec70469f8ea8d5347e382dfe3d8f25d1f589` — 553 MB.
+- Frontend/NGINX:
+  - Usuario 101; sin Node/npm/`node_modules`/fuente.
+  - Puerto 8080; `SIGQUIT`; temporales en `/tmp`; arranque con `--read-only`.
+  - `nginx -t` y `nginx -T` correctos; snippet de proxy incluido.
+  - SPA `/`, `/estado`, `/registros` y ruta desconocida: 200 con `app-root`.
+  - `/api-docs`: 404 sin proxy.
+  - API ausente al arrancar: 502 JSON `UPSTREAM_UNAVAILABLE`, no-store.
+- API runtime:
+  - Usuario `node` (uid 1000), Node 24.13.1, `SIGTERM`.
+  - `pg` 8.23.1 y `express` 5.3.0; sin `node-pg-migrate`, TypeScript, Vitest ni Supertest.
+  - Arranque con `--read-only`; `/api/info`, `/api/health` y `/api/records` correctos.
+- Migración y grants:
+  - Binario real `node_modules/node-pg-migrate/bin/node-pg-migrate.js`.
+  - Primera migración aplicada; segunda sin cambios; una fila en `pgmigrations`.
+  - Grants con `psql` desde la imagen oficial de PostgreSQL.
+  - Rol de aplicación con `SELECT`, `INSERT` y `DELETE`; sin `UPDATE`,
+    `TRUNCATE` ni `CREATE`.
+- Integración:
+  - Solo NGINX publicó `127.0.0.1:18080`; API y PostgreSQL sin puertos; red backend interna.
+  - `/api/info`, `/api/health` y `/api/records`: 200 JSON con `Cache-Control: no-store`.
+  - Prefijo y query string conservados: `/api/probe?x=1&y=2` llegó completo a un servidor de eco.
+  - API recreada con nueva IP: `instanceId` cambió y el proxy recuperó sin reiniciar NGINX.
+  - API detenida: 502 JSON `UPSTREAM_UNAVAILABLE`, no-store; recuperación a 200.
+  - Error de backend conservado: 400 `VALIDATION_ERROR` JSON.
+  - 17 KiB: 413 JSON de Express; 1.1 MiB: 413 JSON de NGINX; ambos no-store.
+  - PostgreSQL detenido con API viva: health 503 válido y records 503 JSON, no-store.
+  - Persistencia tras recrear PostgreSQL con el mismo volumen: registro conservado.
+  - Cierre: NGINX y API exit 0; PostgreSQL exit 0.
+- Limitaciones:
+  - No se validó visualmente la aplicación servida por la imagen NGINX; la evidencia de navegador de IMP-009 se conserva separada.
+  - No se implementaron TLS, CORS, Terraform ni Compose.
+  - El aviso de presupuesto Angular de 528.53 kB se mantiene sin cambios.
+- Evidencias: `docs/Evidencias/IMP-010/`.
+
 ## 4. Matriz funcional
 
 | ID | Prueba | Resultado esperado |

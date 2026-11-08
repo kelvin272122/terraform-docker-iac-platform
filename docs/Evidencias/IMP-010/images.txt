@@ -1,0 +1,6 @@
+web Id=sha256:45994eab833cd14f26f910a78bb35e72a204127e0537d780f02c1e64467e851c Arch=amd64 Os=linux User=101 Ports={"8080/tcp":{}} StopSignal=SIGQUIT
+api Id=sha256:33d2f1d57344599d2303393b440598257085b667e3b8bdc78e6b0550a12ae7a3 Arch=amd64 Os=linux User=node StopSignal=SIGTERM
+migrate Id=sha256:2dcea5fc7c988d9f9f7a816016b6ec70469f8ea8d5347e382dfe3d8f25d1f589 Arch=amd64 Os=linux User=node
+nginx-base RepoDigests=["nginx/nginx-unprivileged@sha256:016193c18ef1ce19dc2229d3305f69af1b05e0bc0e8fe6ee724a58bd305f3855"] Id=sha256:016193c18ef1ce19dc2229d3305f69af1b05e0bc0e8fe6ee724a58bd305f3855 Arch=amd64 User=101 StopSignal=SIGQUIT
+node-base RepoDigests=["node@sha256:a81a03dd965b4052269a57fac857004022b522a4bf06e7a739e25e18bce45af2"] Id=sha256:a81a03dd965b4052269a57fac857004022b522a4bf06e7a739e25e18bce45af2
+postgres-base RepoDigests=["postgres@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994"] Id=sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994

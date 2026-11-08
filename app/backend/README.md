@@ -241,6 +241,25 @@ npm test
 - Las pruebas negativas del guard están en
   `tests/destructive-db-guard.spec.ts`.
 
+## Imágenes de contenedor
+
+- `app/backend/Dockerfile` contiene los targets `build`, `prod-deps`, `runtime`
+  y `migration`.
+- Runtime: `node:24.13.1-bookworm-slim`, usuario `node`, `SIGTERM` y
+  `CMD ["node","dist/server.js"]`.
+- `npm ci --omit=dev`; solo `express` y `pg` en runtime. `node-pg-migrate`,
+  TypeScript, Vitest y Supertest quedan fuera.
+- Migración: target separado con `node-pg-migrate` y
+  `app/database/migrations`.
+- Construcción desde la raíz del repositorio:
+
+```bash
+docker build --platform linux/amd64 -f app/backend/Dockerfile --target runtime -t iac-panel-api:0.1.0 .
+docker build --platform linux/amd64 -f app/backend/Dockerfile --target migration -t iac-panel-api-migrate:0.1.0 .
+```
+
+- Evidencias: `docs/Evidencias/IMP-010/`.
+
 ## Pendientes
 
 - Pruebas de integración del sistema completo (frontend + API + PostgreSQL).

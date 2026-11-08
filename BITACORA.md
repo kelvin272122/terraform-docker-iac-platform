@@ -21,6 +21,7 @@
 | IMP-007 | PostgreSQL, migraciones, pool y `/api/health` | Backend / Base de datos | COMPLETADA | 2026-11-07 |
 | IMP-008 | Operaciones HTTP de Registros | Backend / API | COMPLETADA | 2026-11-07 |
 | IMP-009 | Integración del frontend con la API real | Frontend / Integración | COMPLETADA | 2026-11-07 |
+| IMP-010 | Dockerfiles, imágenes y NGINX | Infra / Frontend / Backend | COMPLETADA | 2026-11-07 |
 
 ## Registro
 
@@ -970,6 +971,106 @@
   se conserva por digest (3.65 GB).
 - No se crearon commits. IMP-003 permanece abierta.
 - Estado final: **IMP-009 COMPLETADA**.
+
+### IMP-010 — Dockerfiles, imágenes y NGINX
+
+- Inicio: 2026-11-07
+- Última actualización: 2026-11-07
+- Área: Infra / Frontend / Backend
+- Estado: COMPLETADA
+- Requerimientos relacionados: RI-02, RI-03, RI-04 y base de RI-05;
+  arquitectura §3, §4 y §10; despliegue §4; PF-22 y PF-23 en su parte de
+  backend/NGINX, sin marcar el sistema completo.
+
+#### Cambios realizados
+- Se añadió `.dockerignore` raíz para los contextos de build.
+- Se creó `app/frontend/Dockerfile` con targets `build` y `runtime`.
+- Se creó `app/backend/Dockerfile` con targets `build`, `prod-deps`, `runtime`
+  y `migration`.
+- Se creó `app/nginx/default.conf` y `app/nginx/api-proxy.conf`.
+- Frontend runtime basado en la imagen slim mantenida
+  `nginx/nginx-unprivileged:1.30.6-alpine3.24-slim`, usuario 101, puerto 8080,
+  `SIGQUIT` y temporales en `/tmp`.
+- NGINX usa resolución dinámica por `127.0.0.11`, proxy `/api` y `/api/`,
+  conserva prefijo y query string, evita `/api-docs`, no cachea API y devuelve
+  502/504/413 JSON seguros.
+- API runtime con Node 24.13.1, usuario `node`, dependencias de producción,
+  `SIGTERM` y arranque directo de `dist/server.js`.
+- Target de migración separado con `node-pg-migrate` y migraciones SQL.
+- Grants ejecutados con `psql` desde la imagen oficial de PostgreSQL.
+- No se añadió el target `development` del frontend.
+- No se modificaron dependencias ni código funcional.
+- No se implementaron Terraform, Compose ni scripts de infraestructura.
+
+#### Archivos relevantes
+- `.dockerignore`
+- `app/frontend/Dockerfile`
+- `app/backend/Dockerfile`
+- `app/nginx/default.conf`
+- `app/nginx/api-proxy.conf`
+- `docs/Evidencias/IMP-010/`
+- `README.md`, `docs/arquitectura.md`, `docs/despliegue.md`,
+  `docs/pruebas.md`, `BITACORA.md`, `MEMORIA.md`
+
+#### Imágenes construidas
+- `iac-panel-web:0.1.0` —
+  `sha256:45994eab833cd14f26f910a78bb35e72a204127e0537d780f02c1e64467e851c`
+  — 22.2 MB.
+- `iac-panel-api:0.1.0` —
+  `sha256:33d2f1d57344599d2303393b440598257085b667e3b8bdc78e6b0550a12ae7a3`
+  — 325 MB.
+- `iac-panel-api-migrate:0.1.0` —
+  `sha256:2dcea5fc7c988d9f9f7a816016b6ec70469f8ea8d5347e382dfe3d8f25d1f589`
+  — 553 MB.
+- Base NGINX verificada:
+  `nginx/nginx-unprivileged:1.30.6-alpine3.24-slim@sha256:016193c18ef1ce19dc2229d3305f69af1b05e0bc0e8fe6ee724a58bd305f3855`.
+  Arquitectura amd64, NGINX 1.30.6, usuario 101, puerto 8080, `SIGQUIT`, PID y
+  temporales en `/tmp`.
+
+#### Validaciones
+- Builds de las tres imágenes: exit 0.
+- `nginx -t` y `nginx -T`: correctos; snippet de proxy incluido.
+- Frontend final sin Node, npm, `node_modules` ni fuente.
+- SPA `/`, `/estado`, `/registros` y ruta desconocida: 200 con `app-root`.
+- `/api-docs`: 404, no proxificado.
+- API ausente al arrancar: 502 JSON `UPSTREAM_UNAVAILABLE`, no-store.
+- API detenida: 502 JSON; recuperación a 200.
+- API recreada con nueva IP: `instanceId` cambió y el proxy recuperó sin
+  reiniciar NGINX.
+- Prefijo y query string conservados: `/api/probe?x=1&y=2`.
+- Error de backend conservado: 400 `VALIDATION_ERROR` JSON.
+- 17 KiB: 413 JSON de Express; 1.1 MiB: 413 JSON de NGINX; no-store.
+- PostgreSQL detenido con API viva: health 503 válido y records 503 JSON,
+  no-store; recuperación a 200.
+- Persistencia tras recrear PostgreSQL con el mismo volumen: registro
+  conservado.
+- Runtime API sin `node-pg-migrate`, TypeScript, Vitest ni Supertest.
+- Migración inicial, segunda ejecución y grants: correctos.
+- Privilegios del rol de aplicación: `SELECT`, `INSERT` y `DELETE`; sin
+  `UPDATE`, `TRUNCATE` ni `CREATE`.
+- Solo NGINX publicó en `127.0.0.1:18080`; API y PostgreSQL sin puertos.
+- Red backend interna; API en ambas redes; PostgreSQL solo en backend.
+- Arranque con `--read-only` y tmpfs en web, API y migración.
+- Cierre: NGINX y API exit 0; PostgreSQL exit 0.
+- Recursos temporales eliminados. Imágenes construidas conservadas.
+- No se validó visualmente la aplicación servida por la imagen NGINX; la
+  evidencia de navegador de IMP-009 se conserva separada.
+- El aviso de presupuesto Angular de 528.53 kB se mantiene sin cambios.
+
+#### Documentación
+- Documentos actualizados: `README.md`, `docs/arquitectura.md`,
+  `docs/despliegue.md`, `docs/pruebas.md`, `BITACORA.md` y `MEMORIA.md`.
+- Evidencias en `docs/Evidencias/IMP-010/`.
+- IMP-003 permanece abierta.
+- No se marcaron pruebas del sistema completo como aprobadas.
+
+#### Pendientes o revisión
+- Target `development` del frontend, pendiente por decisión de alcance.
+- Terraform, Compose y scripts de infraestructura.
+- Pruebas del sistema completo y despliegue final.
+
+#### Próximo paso
+- Planificar Terraform y los scripts de despliegue con autorización separada.
 
 <!--
 Plantilla para cada implementación:

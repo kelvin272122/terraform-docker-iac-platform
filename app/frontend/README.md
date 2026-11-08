@@ -101,6 +101,22 @@ curl -sS http://127.0.0.1:4200/api/health
 curl -sS http://127.0.0.1:4200/api/records
 ```
 
+## Imágenes de contenedor
+
+- `app/frontend/Dockerfile` contiene los targets `build` y `runtime`.
+- La etapa `development` no se añadió en esta tarea.
+- `runtime` usa
+  `nginx/nginx-unprivileged:1.30.6-alpine3.24-slim@sha256:016193c18ef1ce19dc2229d3305f69af1b05e0bc0e8fe6ee724a58bd305f3855`,
+  usuario 101, puerto 8080 y `SIGQUIT`.
+- La imagen final no incluye Node, npm, `node_modules` ni fuente.
+- Construcción desde la raíz del repositorio:
+
+```bash
+docker build --platform linux/amd64 -f app/frontend/Dockerfile --target runtime -t iac-panel-web:0.1.0 .
+```
+
+- Evidencias: `docs/Evidencias/IMP-010/`.
+
 ## Estructura
 
 - `src/app/core/`: modelos, HTTP, configuración, validadores y pipes.

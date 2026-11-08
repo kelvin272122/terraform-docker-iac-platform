@@ -28,12 +28,13 @@ El alcance, la arquitectura y el despliegue detallados están en `docs/`.
   evidencias están en `docs/Evidencias/IMP-009/`.
 - Backend con `/api/info`, `/api/health` y `/api/records`, pool PostgreSQL,
   configuración `DB_*` y migraciones versionadas implementados y validados con
-  PostgreSQL 17 real. Dockerfiles, NGINX y Terraform: pendientes.
+  PostgreSQL 17 real. Dockerfiles, imágenes y NGINX implementados y
+  verificados; Terraform pendiente.
 - `/api/info` sigue disponible y `/api/health` responde 503 cuando PostgreSQL
   no está accesible.
-- La respuesta temporal de `/api` está definida en `docs/arquitectura.md` y
-  `docs/despliegue.md` como 404 JSON con código `API_NOT_CONFIGURED`; la
-  configuración de NGINX sigue pendiente de implementación.
+- La imagen NGINX final proxifica `/api` y `/api/` hacia `api:3000`. El modo
+  sin backend con 404 JSON `API_NOT_CONFIGURED` queda como decisión documental
+  separada; si la API configurada falla, NGINX devuelve 502/504 JSON.
 
 ## Deuda de seguridad pendiente
 
@@ -235,11 +236,32 @@ privilegios del rol de aplicación se aplican con
 Los comandos endurecidos, las pruebas, la migración y la comprobación HTTP en
 red Docker dedicada están en [app/backend/README.md](app/backend/README.md).
 
+## Imágenes y NGINX
+
+Imágenes construidas y verificadas:
+
+- `iac-panel-web:0.1.0`, basada en
+  `nginx/nginx-unprivileged:1.30.6-alpine3.24-slim@sha256:016193c18ef1ce19dc2229d3305f69af1b05e0bc0e8fe6ee724a58bd305f3855`.
+- `iac-panel-api:0.1.0`, con Node 24.13.1 y dependencias de producción.
+- `iac-panel-api-migrate:0.1.0`, con `node-pg-migrate` y las migraciones SQL.
+
+```bash
+docker build --platform linux/amd64 -f app/frontend/Dockerfile --target runtime -t iac-panel-web:0.1.0 .
+docker build --platform linux/amd64 -f app/backend/Dockerfile --target runtime -t iac-panel-api:0.1.0 .
+docker build --platform linux/amd64 -f app/backend/Dockerfile --target migration -t iac-panel-api-migrate:0.1.0 .
+```
+
+NGINX escucha en 8080, corre como usuario 101 y usa `SIGQUIT`. El proxy usa el
+alias `api:3000`, resolución dinámica de Docker, conserva el prefijo y la query
+string, no cachea API y devuelve JSON para fallos de upstream. Las evidencias
+están en `docs/Evidencias/IMP-010/`.
+
 ## Estructura
 
 - `app/frontend/`: aplicación Angular.
 - `app/backend/`: API Express.
 - `app/database/`: migraciones SQL y script administrativo de privilegios.
+- `app/nginx/`: configuración de NGINX y proxy de API.
 - `docs/`: requerimientos, arquitectura, despliegue y pruebas.
 - `infra/`: Terraform (pendiente).
 
