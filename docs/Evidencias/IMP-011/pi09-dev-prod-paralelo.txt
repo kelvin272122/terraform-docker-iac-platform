@@ -1,0 +1,25 @@
+# PI-09 dev y prod en paralelo (2026-11-08T14:52:25-04:00)
+NAMES                     PORTS                      STATUS
+iac-panel-dev-postgres    5432/tcp                   Up 29 seconds (healthy)
+iac-panel-prod-api        3000/tcp                   Up 51 seconds (healthy)
+iac-panel-prod-postgres   5432/tcp                   Up 3 minutes (healthy)
+iac-panel-prod-web        127.0.0.1:8081->8080/tcp   Up 7 minutes (healthy)
+iac-panel-dev-web         127.0.0.1:8080->8080/tcp   Up 8 minutes (healthy)
+iac-panel-dev-api         3000/tcp                   Up 8 minutes (healthy)
+
+Redes:
+iac-panel-dev-backend-net
+iac-panel-dev-frontend-net
+iac-panel-prod-backend-net
+iac-panel-prod-frontend-net
+Volúmenes:
+iac-panel-dev-pgdata
+iac-panel-prod-pgdata
+
+dev  info: {"environment":"dev","apiVersion":"v1","appVersion":"0.1.0","instanceId":"c3945ca64b00"}
+prod info: {"environment":"prod","apiVersion":"v1","appVersion":"0.1.0","instanceId":"9041dde798a0"}
+dev  registros: "title":"Registro testigo" 
+prod registros: "title":"Solo en prod" 
+contraseñas administrativas distintas por entorno: sí (valores no impresos)
+estados separados: dev
+prod

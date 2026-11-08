@@ -1,0 +1,8 @@
+# PI-05 Recrear API (2026-11-08T14:43:05-04:00)
+testigo=f98641ef-d245-4f35-b848-d3d6fb1268b5
+antes: {"environment":"dev","apiVersion":"v1","appVersion":"0.1.0","instanceId":"781622cb03d8"}
+Plan: 1 to add, 0 to change, 1 to destroy.
+Apply complete! Resources: 1 added, 0 changed, 1 destroyed.
+después: {"environment":"dev","apiVersion":"v1","appVersion":"0.1.0","instanceId":"bc4b9462c221"}
+health: {"status":"ok","api":"up","database":"up","checkedAt":"2026-11-08T18:43:17.350Z"}
+testigo presente: 1

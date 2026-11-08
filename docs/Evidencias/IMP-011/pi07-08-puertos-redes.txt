@@ -1,0 +1,18 @@
+# PI-07/PI-08 Puertos y redes (2026-11-08T14:57:03-04:00)
+iac-panel-dev-api | puertos publicados:  | redes: iac-panel-dev-backend-net iac-panel-dev-frontend-net 
+iac-panel-dev-postgres | puertos publicados:  | redes: iac-panel-dev-backend-net 
+iac-panel-dev-web | puertos publicados: 8080/tcp -> 127.0.0.1:8080  | redes: iac-panel-dev-frontend-net 
+iac-panel-prod-api | puertos publicados:  | redes: iac-panel-prod-backend-net iac-panel-prod-frontend-net 
+iac-panel-prod-postgres | puertos publicados:  | redes: iac-panel-prod-backend-net 
+iac-panel-prod-web | puertos publicados: 8080/tcp -> 127.0.0.1:8081  | redes: iac-panel-prod-frontend-net 
+iac-panel-dev-backend-net internal=true
+iac-panel-dev-frontend-net internal=false
+iac-panel-prod-backend-net internal=true
+iac-panel-prod-frontend-net internal=false
+-- Desde el host: PostgreSQL y API no son accesibles
+127.0.0.1:5432 -> 000
+127.0.0.1:3000 -> 000
+-- La red backend es interna: PostgreSQL no tiene salida a internet
+bash: connect: Network is unreachable
+bash: line 1: /dev/tcp/1.1.1.1/53: Network is unreachable
+salida a internet: no

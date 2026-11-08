@@ -22,6 +22,7 @@
 | IMP-008 | Operaciones HTTP de Registros | Backend / API | COMPLETADA | 2026-11-07 |
 | IMP-009 | Integración del frontend con la API real | Frontend / Integración | COMPLETADA | 2026-11-07 |
 | IMP-010 | Dockerfiles, imágenes y NGINX | Infra / Frontend / Backend | COMPLETADA | 2026-11-07 |
+| IMP-011 | Terraform y scripts de despliegue | Infra | COMPLETADA | 2026-11-08 |
 
 ## Registro
 
@@ -1071,6 +1072,79 @@
 
 #### Próximo paso
 - Planificar Terraform y los scripts de despliegue con autorización separada.
+
+### IMP-011 — Terraform y scripts de despliegue
+
+- Inicio: 2026-11-08
+- Última actualización: 2026-11-08
+- Área: Infra
+- Estado: COMPLETADA
+- Requerimientos relacionados: RI-01 a RI-10; arquitectura §3 y §9;
+  despliegue §5 a §11; PI-01 a PI-19.
+
+#### Cambios realizados
+- `.gitignore` raíz (estaba vacío): estados, planes, `.terraform/`, `.env` y
+  volcados quedan fuera de Git.
+- `.gitattributes`: LF obligatorio para `.sh`, `.tf`, `.tfvars`, `.hcl`,
+  `.sql`, `.conf` y `Dockerfile`.
+- `infra/`: `providers.tf`, `variables.tf`, `main.tf`, `outputs.tf`,
+  `environments/{dev,prod}.tfvars`, módulos `network`, `database` y `app`, y
+  `.terraform.lock.hcl` con hashes para `windows_amd64` y `linux_amd64`.
+- Guarda de workspace con precondición en `terraform_data`.
+- PostgreSQL con volumen por entorno, `random_password`, script de
+  inicialización que crea `iac_app`, healthcheck y `wait = true`.
+- API y NGINX con healthchecks, `read_only`, tmpfs, `cap_drop ALL`,
+  `no-new-privileges`, límites de memoria sin swap y solo NGINX publicado en
+  `127.0.0.1`.
+- `infra/scripts/`: `lib.sh`, `build-images.sh`, `deploy.sh`,
+  `smoke-test.sh` y `destroy.sh`. `deploy.sh` reconcilia el rol de
+  aplicación, ejecuta la migración y los grants y espera la salud a través de
+  NGINX.
+
+#### Archivos relevantes
+- `.gitignore`, `.gitattributes`
+- `infra/` (configuración, módulos, entornos y scripts)
+- `docs/Evidencias/IMP-011/`
+- `README.md`, `docs/arquitectura.md`, `docs/despliegue.md`,
+  `docs/pruebas.md`, `BITACORA.md`, `MEMORIA.md`
+
+#### Validaciones
+- Entorno: Windows 11 Pro, Git Bash, Docker Desktop 29.6.2, Terraform
+  1.17.0, `kreuzwerker/docker` 4.6.0, `hashicorp/random` 3.9.1.
+- Imágenes 0.1.0 reconstruidas en este equipo con `build-images.sh`
+  (`iac-panel-web` 17e39b302a27, `iac-panel-api` eb20bd4168e6,
+  `iac-panel-api-migrate` 4fdd7f6cc954); sus IDs difieren de IMP-010 porque
+  son builds distintos de la misma versión en otra máquina.
+- Estáticas: `terraform fmt -check`, `terraform validate` y `bash -n`: sin
+  errores.
+- Desplegadas: PI-01 a PI-19 APROBADAS, PI-18 en simulación (ver
+  `docs/pruebas.md` §5);
+  `smoke-test.sh` 7/7 en dev y prod; capturas de navegador de dev y prod.
+- Incidencias corregidas durante la validación (detalle en
+  `docs/Evidencias/IMP-011/resumen.md`): rutas de Git Bash, deriva por
+  `memory_swap` e IPv6, `depends_on` que forzaba recreaciones, `instanceId`
+  fijo, CRLF en el script de inicialización y un valor sensible impreso en
+  una evidencia (eliminado; dev recreado con contraseñas nuevas).
+- PI-18 detectó que `terraform init` requiere el registro; `tf_init()` en
+  `lib.sh` lo omite si el directorio ya está inicializado.
+- PI-19: versión 0.1.1 temporal, despliegue, verificación en API e interfaz y
+  rollback a 0.1.0; el cambio de versión se revirtió.
+- Verificaciones no ejecutadas y motivo: PI-18 con la red realmente
+  desconectada (se simuló); scripts en Linux (sin equipo disponible).
+
+#### Documentación
+- Documentos actualizados: `README.md`, `docs/arquitectura.md`,
+  `docs/despliegue.md`, `docs/pruebas.md`, `BITACORA.md` y `MEMORIA.md`.
+- README: actualizado (sección Despliegue con Terraform y prerrequisitos).
+- Memoria: actualizada.
+
+#### Pendientes o revisión
+- Repetir PI-18 con la red desconectada antes de la defensa.
+- Probar los scripts en Linux (equipo del otro integrante).
+- Informe académico, guion de defensa y diagramas.
+
+#### Próximo paso
+- Preparar el informe, el guion de la defensa y los diagramas.
 
 <!--
 Plantilla para cada implementación:

@@ -1,0 +1,10 @@
+# PI-10 workspace/variables discordantes (2026-11-08T14:40:52-04:00)
+Error: Resource precondition failed
+
+  on main.tf line 23, in resource "terraform_data" "workspace_guard":
+  23:       condition     = terraform.workspace == var.environment
+-- workspace dev con prod.tfvars:
+Error: Resource precondition failed
+
+  on main.tf line 23, in resource "terraform_data" "workspace_guard":
+  23:       condition     = terraform.workspace == var.environment

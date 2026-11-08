@@ -1,0 +1,12 @@
+# PI-12 Eliminar la API manualmente (drift) (2026-11-08T14:43:32-04:00)
+iac-panel-dev-api
+GET /api/info sin API: {"error":{"code":"UPSTREAM_TIMEOUT","message":"La API no respondió a tiempo."}} [504]
+plan exitcode=2 (2 = cambios detectados)
+  # module.app.docker_container.api will be created
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+# PI-13 Recuperación con apply
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+health: {"status":"ok","api":"up","database":"up","checkedAt":"2026-11-08T18:43:46.226Z"} [200]
+testigo presente: 1
+plan posterior exitcode=0 (0 = estable)

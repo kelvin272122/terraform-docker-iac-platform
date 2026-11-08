@@ -1,0 +1,15 @@
+# PI-15 Recrear dev tras destrucción total (2026-11-08T14:53:11-04:00)
+                psql -v ON_ERROR_STOP=1 \
+Plan: 9 to add, 0 to change, 0 to destroy.
+Apply complete! Resources: 9 added, 0 changed, 0 destroyed.
+ OK Rol iac_app listo
+> Migrating files:
+Migrations complete!
+ OK Privilegios aplicados
+ OK {"status":"ok","api":"up","database":"up","checkedAt":"2026-11-08T18:53:46.583Z"}
+==> Despliegue de dev completo: http://127.0.0.1:8080
+init del volumen nuevo: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/10-app-role.sh 
+registros (debe estar vacío): {"items":[],"total":0}
+tablas: pgmigrations, records
+migraciones registradas: 1794009600000_create-records
+==> Smoke test de dev aprobado

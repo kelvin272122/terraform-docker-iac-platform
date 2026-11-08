@@ -1,0 +1,12 @@
+# PI-11 Cambio de puerto de prueba 8080 -> 8090 (2026-11-08T14:44:04-04:00)
+  # module.app.docker_container.web must be replaced
+          ~ external = 8080 -> 8090 # forces replacement
+Plan: 1 to add, 0 to change, 1 to destroy.
+Apply complete! Resources: 1 added, 0 changed, 1 destroyed.
+url = "http://127.0.0.1:8090"
+8090: 200  8080: 000
+-- Restaurar configuración (dev.tfvars, 8080)
+Plan: 1 to add, 0 to change, 1 to destroy.
+Apply complete! Resources: 1 added, 0 changed, 1 destroyed.
+8080: 200
+plan posterior exitcode=0 (0 = estable)

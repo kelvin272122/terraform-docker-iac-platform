@@ -2,9 +2,10 @@
 
 ## 1. Estado
 
-Los Dockerfiles, las imágenes y la configuración NGINX están implementados y
-verificados. Terraform y los scripts de despliegue/automatización siguen
-pendientes.
+Los Dockerfiles, las imágenes, la configuración NGINX, Terraform y los
+scripts de despliegue están implementados y verificados (IMP-011, 2026-11-08)
+en Windows 11 con Git Bash, Docker Desktop 29.6.2 y Terraform 1.17.0. Los
+resultados están en [pruebas.md](pruebas.md) y en `Evidencias/IMP-011/`.
 
 ## 2. Prerrequisitos
 
@@ -120,12 +121,59 @@ como decisión documental separada; no forman parte de esta imagen final.
 Terraform no administra la construcción de estas imágenes.
 Destruir un entorno no elimina automáticamente las imágenes compartidas.
 
-## 5. Scripts que deben implementarse
+## 5. Terraform
 
-En infra/scripts/:
+Implementado en `infra/`:
+
+- `providers.tf`: Terraform `>= 1.9.0, < 2.0.0`, `kreuzwerker/docker ~> 4.6`
+  (4.6.0) y `hashicorp/random ~> 3.9` (3.9.1); backend local.
+  `.terraform.lock.hcl` versionado con hashes para `windows_amd64` y
+  `linux_amd64`.
+- `variables.tf`: `environment` (dev/prod), `host_port` (1024–65535),
+  `application_version` (semántica), `postgres_image` (obligatoriamente con
+  digest) y `docker_host` (opcional).
+- `main.tf`: prefijo `iac-panel-{entorno}`, etiquetas comunes
+  `com.iac-panel.*` y `terraform_data.workspace_guard`, cuya precondición
+  bloquea el plan si el workspace no coincide con `environment` (incluido
+  `default`).
+- `modules/network`: `frontend-net` y `backend-net` (interna).
+- `modules/database`: volumen `pgdata`, contraseñas `random_password` de 32
+  caracteres alfanuméricos (administración y aplicación), contenedor
+  PostgreSQL solo en `backend-net` con alias `postgres`, healthcheck
+  `pg_isready` por TCP y `wait = true`. Un script en
+  `/docker-entrypoint-initdb.d/` crea el rol `iac_app` sin privilegios
+  administrativos al inicializar un volumen vacío.
+- `modules/app`: API en ambas redes (alias `api`), `read_only`, `/tmp` en
+  tmpfs, `cap_drop ALL`, `no-new-privileges` y healthcheck con `fetch` de Node;
+  NGINX solo en `frontend-net`, publicado en `127.0.0.1:host_port` hacia el
+  puerto interno 8080, con las mismas restricciones y healthcheck con `wget`.
+- Las imágenes de la aplicación se leen con el data source `docker_image`;
+  Terraform no las construye ni las descarga. El contenedor usa el ID de la
+  imagen, de modo que un build nuevo provoca su recreación.
+- Memoria: PostgreSQL 512 MiB, API 256 MiB y NGINX 128 MiB, con
+  `memory_swap` igual a la memoria (sin swap).
+- Reinicio `unless-stopped` en los tres contenedores.
+
+Decisiones técnicas tomadas durante la implementación:
+
+- `ipv6` de las redes se ignora con `lifecycle.ignore_changes`: Docker Desktop
+  lo activa por defecto y el provider no puede forzarlo a `false`, lo que
+  recreaba las redes en cada plan.
+- `DB_HOST` de la API es el nombre del contenedor de PostgreSQL (resoluble por
+  el DNS de Docker). Es una referencia real que ordena la creación sin
+  `depends_on`; recrear PostgreSQL ya no recrea la API ni NGINX.
+- El script de inicialización se sube sin `\r` para tolerar clones con CRLF;
+  `.gitattributes` fuerza LF en `.sh`, `.tf`, `.sql` y `.conf`.
+
+## 6. Scripts
+
+En infra/scripts/ (implementados; `lib.sh` contiene las funciones comunes):
 
 - build-images.sh VERSION
-  Construye las imágenes y devuelve sus etiquetas.
+  Construye las imágenes y devuelve sus etiquetas. Exige que la versión de
+  `app/frontend/package.json` y `app/backend/package.json` coincida con
+  VERSION, descarga la imagen fijada de PostgreSQL si falta y no reconstruye
+  una etiqueta existente.
 
 - deploy.sh ENTORNO VERSION
   Valida herramientas, imágenes, workspace y variables.
@@ -135,8 +183,15 @@ En infra/scripts/:
   Solicita aprobación.
   Aplica el plan.
   Espera PostgreSQL.
-  Ejecuta migraciones con credenciales administrativas.
-  Verifica salud y devuelve URL.
+  Asegura el rol de aplicación (idempotente; repara el caso en que el script
+  de inicialización no se ejecutó y sincroniza la contraseña vigente).
+  Ejecuta migraciones con credenciales administrativas (imagen
+  iac-panel-api-migrate en la red backend; la URL viaja por variable de
+  entorno heredada, no como argumento).
+  Aplica grant-app-privileges.sql con psql dentro del contenedor.
+  Verifica salud a través de NGINX y devuelve URL.
+  Si el apply falla, reconcilia el rol si PostgreSQL quedó en pie y termina
+  sin borrar volúmenes ni estado; basta con volver a ejecutarlo.
 
 - smoke-test.sh ENTORNO
   Comprueba info, salud y ciclo crear/listar/eliminar.
@@ -149,10 +204,18 @@ En infra/scripts/:
   Destruye solo el entorno seleccionado.
 
 Los scripts no aceptan entornos distintos de dev/prod.
-No utilizan auto-approve ni omiten confirmaciones destructivas.
+No utilizan auto-approve ni omiten confirmaciones destructivas: deploy.sh pide
+escribir "si" y destroy.sh pide escribir el nombre del entorno.
 Las credenciales no se pasan como argumentos visibles ni se imprimen.
 
-## 6. Variables por entorno
+Notas para Windows (Git Bash), verificadas:
+- `lib.sh` exporta `MSYS_NO_PATHCONV=1` y usa `pwd -W` para pasar rutas
+  `C:/...` a `docker` y `terraform`.
+- Si `DOCKER_HOST` no está definido, se toma del contexto activo de Docker
+  (por ejemplo `npipe:////./pipe/dockerDesktopLinuxEngine`) para que el
+  provider use el mismo daemon que la CLI.
+
+## 7. Variables por entorno
 
 dev:
 - environment = dev
@@ -163,24 +226,24 @@ prod:
 - host_port = 8081
 
 Compartidas:
-- application_version.
-- api_image y frontend_image.
+- application_version (se pasa con -var desde deploy.sh).
+- Imágenes derivadas: iac-panel-api:VERSION e iac-panel-web:VERSION.
 - Prefijo de recursos por entorno.
 
 Generar contraseñas diferentes por entorno con random_password.
 Marcar secretos como sensibles.
 No guardar contraseñas en tfvars versionados.
 
-## 7. Secuencia de operación
+## 8. Secuencia de operación
 
-Desde la raíz, una vez implementados los scripts:
+Desde la raíz (verificada el 2026-11-08):
 
 1. Ejecutar instalación de dependencias y pruebas del frontend
    dentro de contenedores.
-2. Construir imágenes con build-images.sh VERSION.
-3. Desplegar dev mediante deploy.sh dev VERSION.
+2. Construir imágenes con `bash infra/scripts/build-images.sh 0.1.0`.
+3. Desplegar dev con `bash infra/scripts/deploy.sh dev 0.1.0`.
 4. Comprobar http://127.0.0.1:8080.
-5. Ejecutar smoke-test.sh dev.
+5. Ejecutar `bash infra/scripts/smoke-test.sh dev`.
 6. Repetir para prod en puerto 8081.
 7. Verificar separación de datos.
 8. Guardar evidencias sanitizadas.
@@ -211,7 +274,7 @@ El despliegue solo se considera listo después de migración y salud exitosas.
 Mantener README.md alineado con los comandos implementados y el flujo
 de trabajo dentro de contenedores.
 
-## 8. Salud y fallos
+## 9. Salud y fallos
 
 - PostgreSQL: comprobación con pg_isready.
 - API: healthcheck usando /api/health.
@@ -229,7 +292,7 @@ Si una migración falla:
 - Mostrar instrucciones de diagnóstico sin secretos.
 - Corregir y reejecutar; no ejecutar rollback destructivo automático.
 
-## 9. Persistencia y destrucción
+## 10. Persistencia y destrucción
 
 Recrear un contenedor conservando su volumen mantiene los datos.
 
@@ -248,7 +311,7 @@ No elimina:
 
 No eliminar manualmente el estado para limpiar infraestructura.
 
-## 10. Secretos y repositorio
+## 11. Secretos y repositorio
 
 Excluir:
 - .terraform/
@@ -269,7 +332,7 @@ Versionar:
 El estado local no está cifrado por sensitive=true.
 Guardarlo con permisos restringidos y fuera de evidencias públicas.
 
-## 11. Respaldo
+## 12. Respaldo
 
 El proyecto usa datos descartables; el respaldo no es obligatorio para
 la prueba de destrucción.
@@ -282,9 +345,13 @@ Antes de conservar datos importantes:
 
 No afirmar recuperación probada sin ejecutarla.
 
-## 12. Defensa sin internet
+## 13. Defensa sin internet
 
 - Descargar providers e imágenes previamente.
+- `deploy.sh` y `destroy.sh` omiten `terraform init` si `infra/.terraform/`
+  ya existe y `terraform validate` pasa, porque `init` consulta el registro
+  aunque los providers estén instalados (verificado en PI-18 con acceso a
+  internet bloqueado). No borrar `infra/.terraform/` antes de la defensa.
 - Construir y probar ambas imágenes.
 - Conservar el directorio inicializado.
 - Probar el procedimiento desconectado.

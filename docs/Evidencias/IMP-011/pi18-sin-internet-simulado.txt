@@ -1,0 +1,27 @@
+# PI-18 Defensa desconectada (simulada) (2026-11-08T15:49:28-04:00)
+Simulación: HTTP(S)_PROXY=http://127.0.0.1:9 (inexistente) y NO_PROXY=127.0.0.1,localhost.
+Primer intento: deploy.sh falló en 'terraform init', que consulta el registro aunque
+los providers ya estén instalados. Corrección: tf_init() en lib.sh omite init si
+.terraform/ existe y 'terraform validate' pasa.
+
+-- Control: con la simulación, internet no es accesible
+registry.terraform.io -> 000 (000 = sin conexión)
+-- Control: un init en un directorio nuevo sin providers falla
+Error: Failed to query available provider packages
+-- Despliegue de prod con el directorio ya inicializado
+ OK Terraform ya inicializado (sin acceso a la red)
+ OK Workspace: prod
+No changes. Your infrastructure matches the configuration.
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+ OK Rol iac_app listo
+No migrations to run!
+ OK Privilegios aplicados
+==> Despliegue de prod completo: http://127.0.0.1:8081
+==> Smoke test de prod aprobado
+-- Imágenes locales usadas (Terraform las lee con un data source; no hay pull)
+iac-panel-api-migrate:0.1.0 4fdd7f6cc954
+iac-panel-api:0.1.0 eb20bd4168e6
+iac-panel-web:0.1.0 17e39b302a27
+
+Limitación: la simulación corta el acceso de Terraform y curl a internet; no
+desconecta el daemon de Docker. Se recomienda repetir con la red desconectada.

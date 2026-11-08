@@ -1,0 +1,9 @@
+# Archivos que se ejecutan dentro de contenedores Linux o por Terraform:
+# siempre con fin de línea LF, aunque se clonen en Windows (core.autocrlf).
+*.sh      text eol=lf
+*.tf      text eol=lf
+*.tfvars  text eol=lf
+*.hcl     text eol=lf
+*.sql     text eol=lf
+*.conf    text eol=lf
+Dockerfile text eol=lf

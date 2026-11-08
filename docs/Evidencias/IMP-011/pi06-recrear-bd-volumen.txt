@@ -1,0 +1,8 @@
+# PI-06 Recrear PostgreSQL conservando el volumen (2026-11-08T14:43:17-04:00)
+contenedor antes: 78256fbc6cb9
+Plan: 1 to add, 0 to change, 1 to destroy.
+Apply complete! Resources: 1 added, 0 changed, 1 destroyed.
+contenedor después: 3180bdc9bb0e
+volumen montado: iac-panel-dev-pgdata
+health: {"status":"ok","api":"up","database":"up","checkedAt":"2026-11-08T18:43:31.946Z"}
+testigo presente: 1

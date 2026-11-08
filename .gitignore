@@ -1,0 +1,33 @@
+# Dependencias y compilaciones
+node_modules/
+dist/
+.angular/
+coverage/
+
+# Variables de entorno con secretos
+.env
+.env.*
+!.env.example
+
+# Terraform: estados, planes y caché local (pueden contener secretos)
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfstate.d/
+*.tfplan
+tfplan*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Respaldos y volcados de base de datos
+*.dump
+*.sql.gz
+backups/
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
