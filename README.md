@@ -32,8 +32,8 @@ El alcance, la arquitectura y el despliegue detallados están en `docs/`.
   verificados.
 - Terraform (módulos network, database y app), workspaces dev/prod y scripts
   de construcción, despliegue, smoke test y destrucción implementados y
-  verificados en Windows con Docker Desktop (IMP-011). Pruebas PI-01 a PI-17
-  aprobadas; PI-18 (sin internet) y PI-19 (nueva versión) pendientes.
+  verificados en Windows con Docker Desktop (IMP-011). Pruebas PI-01 a PI-19
+  aprobadas (PI-18, sin internet, en simulación).
 - `/api/info` sigue disponible y `/api/health` responde 503 cuando PostgreSQL
   no está accesible.
 - La imagen NGINX final proxifica `/api` y `/api/` hacia `api:3000`. El modo
@@ -294,6 +294,8 @@ bash infra/scripts/destroy.sh dev
   no se versiona.
 - La versión de `package.json` debe coincidir con la etiqueta que se
   construye.
+- Sin internet: con `infra/.terraform/` ya inicializado y las imágenes
+  construidas, los scripts no descargan nada. No borrar `infra/.terraform/`.
 
 El detalle de módulos, variables y operación está en
 [docs/despliegue.md](docs/despliegue.md); los resultados y evidencias, en

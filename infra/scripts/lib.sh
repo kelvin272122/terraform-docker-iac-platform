@@ -62,6 +62,20 @@ host_port_for() {
     "$INFRA_DIR/environments/$env.tfvars"
 }
 
+# Inicializa Terraform solo si hace falta. `terraform init` consulta el
+# registro aunque los providers ya estén instalados, así que sin internet
+# fallaría; si el directorio ya está inicializado y la configuración valida,
+# se omite (necesario para la defensa sin conexión, PI-18).
+tf_init() {
+  if [[ -d "$INFRA_DIR/.terraform/providers" ]] \
+     && terraform -chdir="$INFRA_DIR" validate -no-color >/dev/null 2>&1; then
+    ok "Terraform ya inicializado (sin acceso a la red)"
+  else
+    terraform -chdir="$INFRA_DIR" init -input=false >/dev/null
+    ok "Terraform inicializado"
+  fi
+}
+
 # Selecciona el workspace del entorno, creándolo solo si se pide.
 select_workspace() {
   local env="$1" create="${2:-no}"

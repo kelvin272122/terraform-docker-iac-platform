@@ -412,8 +412,11 @@ Los comandos deben implementarse y comprobarse antes de declararlos operativos.
   prod; se completó sin borrar datos) y un valor sensible impreso en una
   evidencia (eliminado; dev recreado con contraseñas nuevas). Ver
   `docs/Evidencias/IMP-011/resumen.md`.
-- No ejecutadas: PI-18 (defensa sin internet) y PI-19 (nueva versión de
-  imagen).
+- PI-18 se simuló con un proxy inexistente (`127.0.0.1:9`) que corta el
+  acceso de Terraform y curl a internet; detectó que `terraform init` necesita
+  el registro y se corrigió con `tf_init()`. Conviene repetirla con la red
+  desconectada.
+- PI-19: versión 0.1.1 temporal, despliegue, verificación y rollback a 0.1.0.
 
 ## 4. Matriz funcional
 
@@ -479,8 +482,8 @@ Los comandos deben implementarse y comprobarse antes de declararlos operativos.
 | PI-15 | Recrear tras destrucción total | Base vacía y esquema reconstruido | APROBADA | 0 registros; `records` y `pgmigrations` recreadas |
 | PI-16 | Privilegios API | SELECT/INSERT/DELETE permitidos; UPDATE y DDL denegados | APROBADA | UPDATE, TRUNCATE, CREATE y DROP denegados |
 | PI-17 | Revisar secretos | Sin secretos en Git, UI ni evidencias | APROBADA | 0 coincidencias tras corregir una evidencia |
-| PI-18 | Defensa desconectada | Operaciones previstas sin descargas nuevas | NO EJECUTADA | Pendiente |
-| PI-19 | Nueva versión de imagen | Contenedor usa build nuevo y versión correcta | NO EJECUTADA | Pendiente |
+| PI-18 | Defensa desconectada | Operaciones previstas sin descargas nuevas | APROBADA (simulada) | Sin acceso a internet: deploy y smoke de prod correctos; init nuevo falla como se espera |
+| PI-19 | Nueva versión de imagen | Contenedor usa build nuevo y versión correcta | APROBADA | 0.1.1 en API e interfaz; solo API y NGINX recreados; rollback a 0.1.0 con datos |
 
 Las pruebas destructivas se ejecutan únicamente en dev.
 Guardar el registro testigo antes de las pruebas de persistencia.

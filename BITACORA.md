@@ -22,7 +22,7 @@
 | IMP-008 | Operaciones HTTP de Registros | Backend / API | COMPLETADA | 2026-11-07 |
 | IMP-009 | Integración del frontend con la API real | Frontend / Integración | COMPLETADA | 2026-11-07 |
 | IMP-010 | Dockerfiles, imágenes y NGINX | Infra / Frontend / Backend | COMPLETADA | 2026-11-07 |
-| IMP-011 | Terraform y scripts de despliegue | Infra | IMPLEMENTADA_PENDIENTE_VALIDACION | 2026-11-08 |
+| IMP-011 | Terraform y scripts de despliegue | Infra | COMPLETADA | 2026-11-08 |
 
 ## Registro
 
@@ -1078,7 +1078,7 @@
 - Inicio: 2026-11-08
 - Última actualización: 2026-11-08
 - Área: Infra
-- Estado: IMPLEMENTADA_PENDIENTE_VALIDACION
+- Estado: COMPLETADA
 - Requerimientos relacionados: RI-01 a RI-10; arquitectura §3 y §9;
   despliegue §5 a §11; PI-01 a PI-19.
 
@@ -1117,16 +1117,20 @@
   son builds distintos de la misma versión en otra máquina.
 - Estáticas: `terraform fmt -check`, `terraform validate` y `bash -n`: sin
   errores.
-- Desplegadas: PI-01 a PI-17 APROBADAS (ver `docs/pruebas.md` §5);
+- Desplegadas: PI-01 a PI-19 APROBADAS, PI-18 en simulación (ver
+  `docs/pruebas.md` §5);
   `smoke-test.sh` 7/7 en dev y prod; capturas de navegador de dev y prod.
 - Incidencias corregidas durante la validación (detalle en
   `docs/Evidencias/IMP-011/resumen.md`): rutas de Git Bash, deriva por
   `memory_swap` e IPv6, `depends_on` que forzaba recreaciones, `instanceId`
   fijo, CRLF en el script de inicialización y un valor sensible impreso en
   una evidencia (eliminado; dev recreado con contraseñas nuevas).
-- Verificaciones no ejecutadas y motivo: PI-18 (requiere desconectar la red
-  del equipo) y PI-19 (requiere subir la versión de `package.json` y
-  reconstruir las imágenes).
+- PI-18 detectó que `terraform init` requiere el registro; `tf_init()` en
+  `lib.sh` lo omite si el directorio ya está inicializado.
+- PI-19: versión 0.1.1 temporal, despliegue, verificación en API e interfaz y
+  rollback a 0.1.0; el cambio de versión se revirtió.
+- Verificaciones no ejecutadas y motivo: PI-18 con la red realmente
+  desconectada (se simuló); scripts en Linux (sin equipo disponible).
 
 #### Documentación
 - Documentos actualizados: `README.md`, `docs/arquitectura.md`,
@@ -1135,13 +1139,12 @@
 - Memoria: actualizada.
 
 #### Pendientes o revisión
-- Ejecutar PI-18 y PI-19.
+- Repetir PI-18 con la red desconectada antes de la defensa.
 - Probar los scripts en Linux (equipo del otro integrante).
 - Informe académico, guion de defensa y diagramas.
 
 #### Próximo paso
-- Ejecutar PI-19 con una versión 0.1.1 y PI-18 sin conexión; luego preparar
-  el informe y el guion de la defensa.
+- Preparar el informe, el guion de la defensa y los diagramas.
 
 <!--
 Plantilla para cada implementación:

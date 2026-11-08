@@ -13,7 +13,7 @@ setup_docker
 PLAN_FILE="$ENVIRONMENT-destroy.tfplan"
 TF=(terraform -chdir="$INFRA_DIR")
 
-"${TF[@]}" init -input=false >/dev/null
+tf_init
 select_workspace "$ENVIRONMENT"
 
 # La versión desplegada se lee del estado para que el plan use las mismas imágenes.

@@ -348,6 +348,10 @@ No afirmar recuperación probada sin ejecutarla.
 ## 13. Defensa sin internet
 
 - Descargar providers e imágenes previamente.
+- `deploy.sh` y `destroy.sh` omiten `terraform init` si `infra/.terraform/`
+  ya existe y `terraform validate` pasa, porque `init` consulta el registro
+  aunque los providers estén instalados (verificado en PI-18 con acceso a
+  internet bloqueado). No borrar `infra/.terraform/` antes de la defensa.
 - Construir y probar ambas imágenes.
 - Conservar el directorio inicializado.
 - Probar el procedimiento desconectado.

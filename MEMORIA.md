@@ -3,8 +3,7 @@
 ## Estado actual
 - Fase: frontend, backend, PostgreSQL, Dockerfiles, imágenes, NGINX y
   Terraform implementados. Terraform y scripts verificados en Windows con
-  Docker Desktop (IMP-011): PI-01 a PI-17 aprobadas; PI-18 y PI-19
-  pendientes.
+  Docker Desktop (IMP-011): PI-01 a PI-19 aprobadas (PI-18 simulada).
 - Rama de trabajo de IMP-011: `feat/terraform-infra`.
 - `app/frontend/` contiene un workspace Angular 21 con standalone, routing,
   SCSS, TypeScript estricto, modo zoneless y sin SSR.
@@ -83,8 +82,7 @@
 - IMP-008: operaciones HTTP de Registros. COMPLETADA.
 - IMP-009: integración del frontend con la API real. COMPLETADA.
 - IMP-010: Dockerfiles, imágenes y NGINX. COMPLETADA.
-- IMP-011: Terraform y scripts de despliegue.
-  IMPLEMENTADA_PENDIENTE_VALIDACION (faltan PI-18 y PI-19).
+- IMP-011: Terraform y scripts de despliegue. COMPLETADA.
 
 ## Pendientes y advertencias
 - Validación de navegador completada con Playwright 1.65.0/Chromium 158:
@@ -92,8 +90,9 @@
   «Saltar al contenido», listado desactualizado con BD detenida, recuperación y
   consola aprobados. La eliminación confirmada produce un DELETE 204 y el foco
   posterior queda en el encabezado `#records-title`.
-- Pruebas de infraestructura pendientes: PI-18 (sin internet) y PI-19
-  (nueva versión de imagen). Scripts no probados todavía en Linux.
+- PI-18 se simuló bloqueando internet con un proxy inexistente; repetir con
+  la red desconectada. No borrar `infra/.terraform/` antes de la defensa.
+  Scripts no probados todavía en Linux.
 - Compose no se implementa: `infra/AGENTS.md` prohíbe sustituir Terraform.
 - Windows: `core.autocrlf=true` convierte a CRLF; `.gitattributes` fuerza LF
   en scripts, Terraform y SQL. `terraform output <nombre>` revela valores
@@ -137,9 +136,8 @@
   sin la autorización correspondiente.
 
 ## Siguiente paso
-1. Ejecutar PI-19 (versión 0.1.1) y PI-18 (sin conexión).
-2. Probar los scripts en Linux.
-3. Redactar el informe académico, el guion de la defensa y los diagramas.
+1. Probar los scripts en Linux y repetir PI-18 sin red.
+2. Redactar el informe académico, el guion de la defensa y los diagramas.
 
 ## Última actualización
 - Fecha: 2026-11-08.

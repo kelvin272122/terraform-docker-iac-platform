@@ -33,12 +33,23 @@ Fecha: 2026-11-08.
 | PI-15 | Recrear tras destrucción total | APROBADA | `pi15-recrear-dev.txt` |
 | PI-16 | Privilegios API | APROBADA | `pi16-privilegios.txt` |
 | PI-17 | Revisar secretos | APROBADA | `pi17-secretos.txt` |
-| PI-18 | Defensa desconectada | NO EJECUTADA | Requiere desconectar la red del equipo; pendiente |
-| PI-19 | Nueva versión de imagen | NO EJECUTADA | Requiere subir la versión de `package.json` y reconstruir; pendiente |
+| PI-18 | Defensa desconectada | APROBADA (simulada) | `pi18-sin-internet-simulado.txt` |
+| PI-19 | Nueva versión de imagen | APROBADA | `pi19-nueva-version.txt`, `navegador/dev-estado-0.1.1.jpg` |
 
 Capturas de la interfaz servida por la infraestructura desplegada (navegador
 integrado, 800×600): `navegador/dev-estado.jpg`, `navegador/dev-registros.jpg`
-y `navegador/prod-estado.jpg`.
+`navegador/prod-estado.jpg` y `navegador/dev-estado-0.1.1.jpg` (dev con la
+versión 0.1.1 durante PI-19).
+
+PI-18 se simuló con `HTTP(S)_PROXY` apuntando a un puerto cerrado
+(`127.0.0.1:9`) y `NO_PROXY=127.0.0.1,localhost`: Terraform y curl no tenían
+acceso a internet. No desconecta el daemon de Docker; se recomienda repetirla
+con la red del equipo desconectada antes de la defensa.
+
+PI-19 subió temporalmente la versión de `package.json` a 0.1.1, construyó las
+imágenes 0.1.1, desplegó dev (solo se recrearon API y NGINX), verificó 0.1.1
+en `/api/info` y en la interfaz, y volvió a 0.1.0 (rollback) conservando los
+datos. El cambio de versión se revirtió en el código.
 
 ## Incidencias encontradas y corregidas durante la validación
 
@@ -69,6 +80,10 @@ y `navegador/prod-estado.jpg`.
    valor aunque sea sensible. Se eliminó la línea de `pi17-secretos.txt`, se
    comprobó que no queda en el repositorio y se recreó dev para generar
    contraseñas nuevas.
+8. **Despliegue sin internet.** `terraform init` consulta el registro aunque
+   los providers estén instalados, así que `deploy.sh` fallaba sin conexión
+   (lo detectó PI-18). `tf_init()` en `lib.sh` omite `init` si `.terraform/`
+   existe y `terraform validate` pasa.
 
 ## Limitaciones
 

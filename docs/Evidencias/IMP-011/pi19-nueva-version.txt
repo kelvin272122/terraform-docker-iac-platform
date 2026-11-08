@@ -1,0 +1,27 @@
+# PI-19 Nueva versión de imagen 0.1.0 -> 0.1.1 y rollback (2026-11-08T15:50:30-04:00)
+Imágenes 0.1.1: iac-panel-api-migrate:0.1.1 24e4525296cf iac-panel-api:0.1.1 fef68dbeeed2 iac-panel-web:0.1.1 f6c4392af25a 
+antes: {"environment":"dev","apiVersion":"v1","appVersion":"0.1.0","instanceId":"6fde718903e1"}
+registros antes: "total":1
+-- deploy.sh dev 0.1.1
+  # module.app.docker_container.api must be replaced
+      ~ image                                       = "sha256:eb20bd4168e696a816c6d163bd37ed500b5155af31d36d84a546fd71b5e76ece" -> "sha256:fef68dbeeed20dca635b235408e0738165ec6249aa778c668163a4df9e04e700" # forces replacement
+  # module.app.docker_container.web must be replaced
+      ~ image                                       = "sha256:17e39b302a27a517c0206dbc96131a799b2d33c0847172ddcbec00a3e369e4ad" -> "sha256:f6c4392af25a9f17a622315f38d0ecce13239cd0b5e47578e3999a2d725cf6ad" # forces replacement
+Plan: 2 to add, 0 to change, 2 to destroy.
+Apply complete! Resources: 2 added, 0 changed, 2 destroyed.
+No migrations to run!
+==> Despliegue de dev completo: http://127.0.0.1:8080
+después: {"environment":"dev","apiVersion":"v1","appVersion":"0.1.1","instanceId":"733a42eb8a9c"}
+imagen en uso: api=fef68dbeeed2 web=f6c4392af25a
+registros después: "total":1
+==> Smoke test de dev aprobado
+
+-- Rollback: deploy.sh dev 0.1.0
+Plan: 2 to add, 0 to change, 2 to destroy.
+Apply complete! Resources: 2 added, 0 changed, 2 destroyed.
+==> Despliegue de dev completo: http://127.0.0.1:8080
+después del rollback: {"environment":"dev","apiVersion":"v1","appVersion":"0.1.0","instanceId":"2ddf445e1e3d"}
+registros: "total":1
+==> Smoke test de dev aprobado
+Captura con la versión 0.1.1 en la interfaz: navegador/dev-estado-0.1.1.jpg
+El cambio de versión en package.json fue temporal para la prueba y se revirtió.

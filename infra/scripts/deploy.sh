@@ -26,7 +26,7 @@ done
 ok "Imágenes presentes"
 
 info "Inicializando Terraform"
-"${TF[@]}" init -input=false >/dev/null
+tf_init
 select_workspace "$ENVIRONMENT" create
 
 info "Generando plan para $ENVIRONMENT"
